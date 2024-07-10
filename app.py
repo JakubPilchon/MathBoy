@@ -9,20 +9,31 @@ class Applicaion(tk.Tk):
 
     def __init__(self):
         super().__init__()
-        self.color = tk.StringVar(self, "black")
-
-        mainframe = ttk.Frame(self,padding=2, height=750, width=1250, border=10)
-        #mainframe.grid()
         
-    
+        #Options
+        self.geometry("1250x750")
         self.title("MathBoy")
 
-        tk.Radiobutton(self, variable = self.color, value="black", selectcolor="#000000").grid(column=0, row=0, sticky="NW")
-        tk.Radiobutton(self, variable = self.color, value="red",  selectcolor="#ff0000").grid(column=1, row=0, sticky="NW")
-        tk.Radiobutton(self, variable = self.color, value="blue", selectcolor="#0000ff").grid(column=0, row=1, sticky="NW")
-        tk.Radiobutton(self, variable = self.color, value="green",selectcolor="#00ff00").grid(column=1, row=1, sticky="NW")
+        #Variables
+        self.color = tk.StringVar(self, "black")
 
-        button = ttk.Button(self, text="Click button", command=self.__button_click).grid(column=2, row=1, sticky='NW')
+        colorframe = ttk.Frame(self, height=55, width=300)
+        colorframe.grid(sticky="NW")
+        
+        tk.Radiobutton(colorframe, variable = self.color, value="black", selectcolor="#000000", cursor="hand2").grid(column=0, row=0, sticky="NW")
+        tk.Radiobutton(colorframe, variable = self.color, value="white",  selectcolor="#ffffff", cursor="hand2").grid(column=0, row=1, sticky="NW")
+
+        tk.Radiobutton(colorframe, variable = self.color, value="red",  selectcolor="#ff0000", cursor="hand2").grid(column=1, row=0, sticky="NW")
+        tk.Radiobutton(colorframe, variable = self.color, value="green",selectcolor="#00ff00", cursor="hand2").grid(column=1, row=1, sticky="NW")
+        
+        tk.Radiobutton(colorframe, variable = self.color, value="blue", selectcolor="#0000ff", cursor="hand2").grid(column=2, row=0, sticky="NW")
+        tk.Radiobutton(colorframe, variable = self.color, value="yellow",selectcolor="#ffee03", cursor="hand2").grid(column=2, row=1, sticky="NW")
+
+        tk.Radiobutton(colorframe, variable = self.color, value="violet", selectcolor="#8503ff", cursor="hand2").grid(column=3, row=0, sticky="NW")
+        tk.Radiobutton(colorframe, variable = self.color, value="pink", selectcolor="#ff03f2", cursor="hand2").grid(column=3, row=1, sticky="NW")
+
+        button = ttk.Button(colorframe, text="Click button", command=self.__button_click)
+        button.grid(column=4, row=1, sticky='NW')
 
         canvas = tk.Canvas(self, width=1250, height=700, background="#ffffff")
         canvas.grid(column=0, row=2)
