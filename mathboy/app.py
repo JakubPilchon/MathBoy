@@ -8,6 +8,7 @@ class Applicaion(tk.Tk):
         print(f"current color: {self.color.get()}")
 
     def __paint(self, event):
+        """creates oval in place where mouse is."""
         if self.is_painting:
             self.canvas.create_oval(event.x-5, event.y-5, event.x+5, event.y+5, fill=self.color.get(), width=0)
 
@@ -17,8 +18,12 @@ class Applicaion(tk.Tk):
     def __stop_paint(self, event):
         self.is_painting = False
     
-    def reset(self):
+    def __reset(self):
+        """deletes all painting from canvas"""
         self.canvas.delete("all")
+
+    def __get_picture(self):
+        self.canvas.postscript(file="image.ps", colormode="color")
 
     def __init__(self):
         super().__init__()
@@ -47,10 +52,10 @@ class Applicaion(tk.Tk):
         tk.Radiobutton(colorframe, variable = self.color, value="purple", selectcolor="#8503ff", cursor="hand2").grid(column=3, row=0, sticky="NW")
         tk.Radiobutton(colorframe, variable = self.color, value="pink",   selectcolor="#ff03f2", cursor="hand2").grid(column=3, row=1, sticky="NW")
 
-        button = ttk.Button(colorframe, text="Click button", command=self.__button_click)
+        button = ttk.Button(colorframe, text="Click button", command=self.__get_picture)
         button.grid(column=4, row=1, sticky='NW')
 
-        reset_button = ttk.Button(colorframe, text="reset", command=self.reset)
+        reset_button = ttk.Button(colorframe, text="reset", command= self.__reset)
         reset_button.grid(column=4, row=0, sticky='NW')
 
         self.canvas = tk.Canvas(self, width=1250, height=700, background="#ffffff", cursor="plus")
