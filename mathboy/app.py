@@ -1,17 +1,26 @@
 import tkinter as tk
 from tkinter import ttk
 from PIL import ImageGrab
+from preprocessor import Preprocessor
 
 
 class Applicaion(tk.Tk):
 
     def __button_click(self):
-        print(f"current color: {self.color.get()}")
+        self.__get_picture()
+
+        pre = Preprocessor()
+        #rectangles = pre.get_rectangles()
+        for x,y,w,h in pre.get_rectangles():
+            self.canvas.create_rectangle(((x,y), (x+w, y+h)))
+
+
 
     def __paint(self, event):
         """creates oval in place where mouse is."""
         if self.is_painting:
-            self.canvas.create_oval(event.x-5, event.y-5, event.x+5, event.y+5, fill=self.color.get(), width=0)
+            
+            self.canvas.create_oval(event.x- self.scale.get(), event.y-self.scale.get(), event.x+self.scale.get(), event.y+self.scale.get(), fill=self.color.get(), width=0)
 
     def __start_paint(self, event):
         self.is_painting = True
@@ -45,9 +54,10 @@ class Applicaion(tk.Tk):
 
         # Variables
         self.color = tk.StringVar(self, "black")
+        self.scale = tk.IntVar(self, 5)
 
         # Define app layout
-        colorframe = ttk.Frame(self, height=55, width=300)
+        colorframe = ttk.Frame(self, height=55, width=300, borderwidth=3)
         colorframe.grid(sticky="NW")
         
         tk.Radiobutton(colorframe, variable = self.color, value="black",  selectcolor="#000000", cursor="hand2").grid(column=0, row=0, sticky="NW")
@@ -57,16 +67,19 @@ class Applicaion(tk.Tk):
         tk.Radiobutton(colorframe, variable = self.color, value="green",selectcolor="#00ff00", cursor="hand2").grid(column=1, row=1, sticky="NW")
         
         tk.Radiobutton(colorframe, variable = self.color, value="blue",  selectcolor="#0000ff", cursor="hand2").grid(column=2, row=0, sticky="NW")
-        tk.Radiobutton(colorframe, variable = self.color, value="yellow",selectcolor="#ffee03", cursor="hand2").grid(column=2, row=1, sticky="NW")
+        tk.Radiobutton(colorframe, variable = self.color, value="#e68f0e",selectcolor="#e68f0e", cursor="hand2").grid(column=2, row=1, sticky="NW")
 
         tk.Radiobutton(colorframe, variable = self.color, value="purple", selectcolor="#8503ff", cursor="hand2").grid(column=3, row=0, sticky="NW")
-        tk.Radiobutton(colorframe, variable = self.color, value="pink",   selectcolor="#ff03f2", cursor="hand2").grid(column=3, row=1, sticky="NW")
+        tk.Radiobutton(colorframe, variable = self.color, value="#de09cc",   selectcolor="#ff03f2", cursor="hand2").grid(column=3, row=1, sticky="NW")
 
-        button = ttk.Button(colorframe, text="Click button", command=self.__get_picture)
+        button = ttk.Button(colorframe, text="Click button", command=self.__button_click)
         button.grid(column=4, row=1, sticky='NW')
 
         reset_button = ttk.Button(colorframe, text="reset", command= self.__reset)
         reset_button.grid(column=4, row=0, sticky='NW')
+
+        scale = tk.Scale(colorframe,  variable=self.scale, from_=2, to=15, orient=tk.HORIZONTAL)
+        scale.grid(column=5, row=0, rowspan=2)
 
         self.canvas = tk.Canvas(self, width=1250, height=700, background="#ffffff", cursor="plus")
         self.canvas.grid(column=0, row=2)
