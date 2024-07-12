@@ -8,27 +8,31 @@ class Preprocessor:
 
         img = cv.imread('img.jpg')
 
+        print(img.shape)
+
         img_pre = cv.cvtColor(img, cv.COLOR_BGR2GRAY)
-        #img = cv.THRESH_BINARY_INV()
         _, img_pre = cv.threshold(img_pre, 240, 255, cv.THRESH_BINARY_INV)
 
-        contours, hierarchy = cv.findContours(img_pre, cv.RETR_TREE, cv.CHAIN_APPROX_NONE)
+        img_pre = img_pre[10:694, 10:1244]
+        #img_pre = cv.bitwise_not(img_pre)
+        dilated = cv.dilate(img_pre, cv.getStructuringElement(cv.MORPH_RECT,(5,5)), iterations=5)
+
+        contours, hierarchy = cv.findContours(dilated, cv.RETR_TREE, cv.CHAIN_APPROX_SIMPLE)
 
         cv.drawContours(img_pre, contours, -1, (0,255,0), 3)
 
-        contours = contours[0].reshape(-1, 2)
 
-        
-        
-        for (x, y) in contours:
-            cv.circle(img_pre, (x, y), 100, (0, 255,0), 3)
 
-        print(contours)
+        for n in contours:
+            x,y,w,h = cv.boundingRect(n)
+            if h < 40: h = 40
+
+            if w >= 80:
+                cv.rectangle(img, (x,y), (x+w, y+h), (0,255,00), 5)
 
         cv.imshow("img_pre",img_pre)
         cv.imshow("img", img)
         k = cv.waitKey(0)
-
 
 if __name__ == "__main__":
     pre = Preprocessor()
