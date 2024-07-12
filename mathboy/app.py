@@ -31,6 +31,7 @@ class Applicaion(tk.Tk):
 
         x2 = x1 + self.canvas.winfo_width()
         y2 = y1 + self.canvas.winfo_height()
+        
         img = ImageGrab.grab((x1,y1,x2,y2))
         img.save("img.jpg")
 
