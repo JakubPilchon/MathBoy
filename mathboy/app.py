@@ -1,5 +1,6 @@
 import tkinter as tk
 from tkinter import ttk
+from PIL import ImageGrab
 
 
 class Applicaion(tk.Tk):
@@ -23,7 +24,15 @@ class Applicaion(tk.Tk):
         self.canvas.delete("all")
 
     def __get_picture(self):
-        self.canvas.postscript(file="image.ps", colormode="color")
+        """Screenshots Canvas in order to save is as bitmap image."""
+        # canvas coordinates
+        x1 = self.winfo_rootx() + self.canvas.winfo_x()
+        y1 = self.winfo_rooty() + self.canvas.winfo_y()
+
+        x2 = x1 + self.canvas.winfo_width()
+        y2 = y1 + self.canvas.winfo_height()
+        img = ImageGrab.grab((x1,y1,x2,y2))
+        img.save("img.jpg")
 
     def __init__(self):
         super().__init__()
