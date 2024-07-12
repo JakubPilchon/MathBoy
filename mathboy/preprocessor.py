@@ -5,30 +5,33 @@ class Preprocessor:
     def open_img(self):
         # check if file exists 
         assert os.path.isfile('img.jpg')
-
+        # Load up image 
         img = cv.imread('img.jpg')
 
-        print(img.shape)
-
+        # Convert image to Grayscale
         img_pre = cv.cvtColor(img, cv.COLOR_BGR2GRAY)
-        _, img_pre = cv.threshold(img_pre, 240, 255, cv.THRESH_BINARY_INV)
+        # Thresholding technique on image, makes every character black
+        _, img_pre = cv.threshold(img_pre, 240, 255, cv.THRESH_OTSU)
+        # Crops image, because loaded up image is 4 pixels higher and wider than it should be
+        img_pre = img_pre[:690, :1250]
+        # Reverse colors, now characters are white and background is black
+        img_pre = cv.bitwise_not(img_pre)
 
-        img_pre = img_pre[10:694, 10:1244]
-        #img_pre = cv.bitwise_not(img_pre)
+        # makes characters bigger, better for finding countours
         dilated = cv.dilate(img_pre, cv.getStructuringElement(cv.MORPH_RECT,(5,5)), iterations=5)
 
-        contours, hierarchy = cv.findContours(dilated, cv.RETR_TREE, cv.CHAIN_APPROX_SIMPLE)
+        #finds contours of characters
+        contours, _ = cv.findContours(dilated, cv.RETR_TREE, cv.CHAIN_APPROX_SIMPLE)
 
-        cv.drawContours(img_pre, contours, -1, (0,255,0), 3)
-
-
-
+        
         for n in contours:
+            # finds rectange encompassing character countour
             x,y,w,h = cv.boundingRect(n)
-            if h < 40: h = 40
+            #if h < 50: h = 50
 
-            if w >= 80:
-                cv.rectangle(img, (x,y), (x+w, y+h), (0,255,00), 5)
+            if w >= 0:
+                # paints green rectangle around character
+                cv.rectangle(img, (x,y), (x+w, y+h), color= (0,255,00), thickness= 5)
 
         cv.imshow("img_pre",img_pre)
         cv.imshow("img", img)
