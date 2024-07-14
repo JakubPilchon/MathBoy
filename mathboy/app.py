@@ -14,6 +14,8 @@ class Applicaion(tk.Tk):
         for x,y,w,h in pre.get_rectangles():
             self.canvas.create_rectangle(((x,y), (x+w, y+h)))
 
+        pre.get_characters(pre.get_rectangles())
+
 
 
     def __paint(self, event):
