@@ -11,7 +11,7 @@ class Preprocessor:
         self.img = self.img[:690, :1250]
 
         #Constants:
-        self.KERNEL = (5,11)
+        self.KERNEL = (4,11)
 
     def get_rectangles(self):
         # Convert image to Grayscale
@@ -42,14 +42,14 @@ class Preprocessor:
         assert isinstance(rectangles, list)
 
         preprocessed_img =cv.cvtColor(self.img, cv.COLOR_BGR2GRAY)
-        preprocessed_img = cv.threshold(preprocessed_img, 240, 255, cv.THRESH_OTSU)
+        _, preprocessed_img = cv.threshold(preprocessed_img, 240, 255, cv.THRESH_OTSU)
         preprocessed_img = cv.bitwise_not(preprocessed_img)
 
         for n, (x,y,w,h) in enumerate(rectangles):
             char = preprocessed_img[y:y+h, x:x+w]
             print(char.shape)
             try:
-                char = cv.resize(char, (40,40), interpolation=cv.INTER_AREA)
+                char = cv.resize(char, (32,32), interpolation=cv.INTER_AREA)
                 cv.imshow(f"character{n}", char)
             except Exception as e:
                 print("ERROR: ", e)
