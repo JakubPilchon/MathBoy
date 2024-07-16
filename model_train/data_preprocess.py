@@ -15,16 +15,16 @@ PIPELINE:
 
 
 
-DIR_NAME = "0"
-try:
-    os.mkdir(os.path.join("dataset", DIR_NAME))
-except FileExistsError:
-    print("file already exists")
+for class_name in os.listdir("dataset_before"):
+    if class_name.startswith("."): continue
+    try:
+        os.mkdir(os.path.join("dataset", class_name))
+    except FileExistsError:
+        print(f"file {class_name} already exists")
 
-for num, file in enumerate(os.listdir(os.path.join("dataset_before", DIR_NAME))):
-    if file.startswith("."): continue
-    print(file)
-    img = cv.imread(os.path.join('dataset_before', DIR_NAME, file))
-    img = cv.resize(img, (32,32), interpolation=cv.INTER_AREA)
-    img = cv.bitwise_not(img)
-    cv.imwrite(os.path.join('dataset', DIR_NAME, f"{DIR_NAME}_{num}.jpg"), img)
+    for num, file in enumerate(os.listdir(os.path.join("dataset_before", class_name))):
+        if file.startswith("."): continue
+        img = cv.imread(os.path.join('dataset_before', class_name, file))
+        img = cv.resize(img, (32,32), interpolation=cv.INTER_AREA)
+        img = cv.bitwise_not(img)
+        cv.imwrite(os.path.join('dataset', class_name, f"{class_name}_{num}.jpg"), img)
