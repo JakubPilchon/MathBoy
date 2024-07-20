@@ -13,6 +13,8 @@ class MathCharactersDataset(torch.utils.data.Dataset):
 
         self.dir = dir
         self.data = []
+        list_of_dirs = os.listdir(self.dir)
+
         self.transforms = Compose([
             Grayscale(num_output_channels=1),
             ConvertImageDtype(torch.float),
@@ -20,10 +22,11 @@ class MathCharactersDataset(torch.utils.data.Dataset):
             ])
         
         ## get dataset annotations
-        for class_name in os.listdir(self.dir):
+        for i, class_name in enumerate(list_of_dirs):
+            class_dist = torch.zeros((1, len(list_of_dirs)), dtype=torch.float32)
+            class_dist[0][i] = 1.
             for data_name in os.listdir(os.path.join(self.dir, class_name)):
-                self.data.append((os.path.join(self.dir, class_name, data_name), class_name))
-
+                self.data.append((os.path.join(self.dir, class_name, data_name), class_dist))
 
     def __len__(self) -> int:
         return len(self.data)
@@ -35,14 +38,14 @@ class MathCharactersDataset(torch.utils.data.Dataset):
             img = self.transforms(img)
             return (img, class_name)
         else:
-            raise TypeError("athCharactersDataset does not support slicing")
+            raise TypeError("MathCharactersDataset does not support slicing")
 
 
 class CharModel(torch.nn.Module):
     def __init__(self):
         super(CharModel, self).__init__()
 
-        # defy model architecture
+        # define model architecture
         self.conv1 = torch.nn.Conv2d(1, 32, 3, 1)
         self.padd1 = torch.nn.MaxPool2d(2, 2)
 
@@ -58,7 +61,7 @@ class CharModel(torch.nn.Module):
         self.softmax = torch.nn.Softmax()
         
 
-    def forward(self, x: torch.tensor):
+    def forward(self, x: torch.tensor) -> torch.tensor:
         x = self.conv1(x)
         x = self.padd1(x)
         x = self.activation(x)
@@ -73,7 +76,6 @@ class CharModel(torch.nn.Module):
         x = self.activation(x)
 
         x = self.linear2(x)
-        print(x.shape)
         x = self.softmax(x)
         return x
         
@@ -83,10 +85,10 @@ class CharModel(torch.nn.Module):
 
 if __name__ == "__main__":
     dataset = MathCharactersDataset("dataset")
-    img,  _ = dataset[0]
+    img,  target = dataset[5000]
     model = CharModel()
-    img = model.forward(img)
-
+    predict = model.forward(img)
+    print()
         
         
 
