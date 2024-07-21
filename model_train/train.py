@@ -93,6 +93,9 @@ class CharModel(torch.nn.Module):
         OPTIMIZER = torch.optim.Adam(self.parameters(), learning_rate)
         LOSS_FN = torch.nn.CrossEntropyLoss()
 
+        # threshold for best validation loss
+        best_vloss = float("inf")
+
         for e in range(epochs):
             print("EPOCH: ", e+1)
             save_loss = 0.
@@ -112,30 +115,41 @@ class CharModel(torch.nn.Module):
                 # perform optimization
                 OPTIMIZER.step()
                 
-                if i % 50 == 49:
-                    print(f"    BATCH: {i+1} LOSS: {loss.item()}")
+                if i % 5 == 4:
+                    print("    Batch: {} ||{}{}|| Loss: {}".format(
+                        str(i+1).zfill(3), # batch number
+                        "#" * int((i+1)/5), # progress bar which is completed
+                        " " * int(len(train_dataloader)/5 - (i+1)/5), # progress bar which is empty
+                        loss.item()), end="\r") # loss value, end arguments makes print() function replace last displayed message in console
                     save_loss += loss.item()
             
-            save_loss /= i+1
+            #print("\n")
+            save_loss /= i
 
-            # evaluate model every epoch
+            # evaluate model every epoch, disabling gradients
             with torch.no_grad():
                 vloss = 0.
                 for i, data in enumerate(validation_dataloader):
                     vinputs, vlabels = data
                     vpredicts = self.forward(vinputs)
-                    vloss += LOSS_FN(predictions, labels)
+                    vloss += LOSS_FN(vpredicts, vlabels)
                 vloss /= i+1
+
                 print(f"  Validation loss: {vloss}, loss: {save_loss}")
 
-
-
-
-
-
+                if vloss < best_vloss:
+                    best_vloss = vloss
+                    torch.save(self.state_dict(), "model.pt")
+                    print("  Best perrformance up to date, model saved.")
+                else:
+                    print("  Smaller validation loss, model wasn't saved")
+            
+                
 if __name__ == "__main__":
     dataset = MathCharactersDataset("dataset")
+
     TRAIN_TEST_SPLIT = 0.8
+    LEARNING_RATE = .01
 
     # Split datasets into train and validation sets
     train_size = int(TRAIN_TEST_SPLIT * len(dataset)) # train size = 8056
@@ -143,10 +157,13 @@ if __name__ == "__main__":
     train_dataset, validation_dataset = torch.utils.data.random_split(dataset, [train_size, validation_size])
     
     train_dataloader = torch.utils.data.DataLoader(train_dataset, batch_size=32, shuffle=True)
-    validation_dataloader = torch.utils.data.DataLoader(validation_dataset, batch_size=32, shuffle=True)
+    validation_dataloader = torch.utils.data.DataLoader(validation_dataset, batch_size=16, shuffle=True)
 
     model = CharModel()
-    model.fit(train_dataloader,validation_dataloader, epochs=5)
+    model.fit(train_dataloader,
+            validation_dataloader,
+            learning_rate=LEARNING_RATE,
+            epochs=5)
         
 
 
