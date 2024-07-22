@@ -47,47 +47,62 @@ class CharModel(torch.nn.Module):
     def __init__(self):
         super(CharModel, self).__init__()
 
-        
-
-        # define model architecture
+        # MODEL ARCHITECTURE
+        # first convolutional block
         self.conv1 = torch.nn.Conv2d(1, 32, 3, 1)
         self.padd1 = torch.nn.MaxPool2d(2, 2)
 
+        # second convolutional block
         self.conv2 = torch.nn.Conv2d(32, 16, 3, 1)
         self.padd2 = torch.nn.MaxPool2d(3,3)
 
-        self.flatten = torch.nn.Flatten(start_dim= 1)
-        
+        # Linear block
+        #    flatten convolutions into vectors
+        self.flatten = torch.nn.Flatten()
         self.linear1 = torch.nn.Linear(256, 64)
         self.linear2 = torch.nn.Linear(64, 19)
 
+        #    Activation added inbetween blocks
         self.activation = torch.nn.functional.relu
-        self.softmax = torch.nn.Softmax()
         
 
     def forward(self, x: torch.tensor) -> torch.tensor:
-        x = self.conv1(x)
-        x = self.padd1(x)
+        dims = len(x.shape)
+        # Flow of single character image
+        # input shape = (1,32,32)
+        x = self.conv1(x) # shape = (32,30,30)
+        x = self.padd1(x) # shape = (32,15,15)
+        x = self.activation(x) # shape = (32,15,15)
+
+        x = self.conv2(x) # shape = (16,13,13)
+        x = self.padd2(x) # shape = (16,4,4)
+        x = self.activation(x) # shape = (16,4,4)
+
+        if dims == 4: # Choose the appriopriate flattening technique, depending if x is a single image or batch
+            x= torch.flatten(x, start_dim=1) # shape = (256)
+        else:
+            x = torch.flatten(x, start_dim = 0) # shape = (256)
+
+        x = self.linear1(x) # shape = (64)
         x = self.activation(x)
 
-        x = self.conv2(x)
-        x = self.padd2(x)
-        x = self.activation(x)
-
-        x = self.flatten(x)
-
-        x = self.linear1(x)
-        x = self.activation(x)
-
-        x = self.linear2(x)
-        #x = self.softmax(x)
+        x = self.linear2(x) # shape = (19)
         return x
+    
+    def accuracy(self,
+                 predicts: torch.tensor,
+                 labels: torch.tensor
+                 ) -> torch.float:
+        predicts = torch.argmax(predicts, dim=1)
+        labels = torch.argmax(labels, dim=1)
+        return torch.sum(predicts.eq(labels).float())
     
     def fit(self,
             train_dataloader: torch.utils.data.DataLoader,
             validation_dataloader: torch.utils.data.DataLoader,
             learning_rate: float = 0.001,
-            epochs: int = 5) -> None:
+            epochs: int = 5
+            ) -> None:
         
         # define model optimizer and loss function
         OPTIMIZER = torch.optim.Adam(self.parameters(), learning_rate)
@@ -129,13 +144,15 @@ class CharModel(torch.nn.Module):
             # evaluate model every epoch, disabling gradients
             with torch.no_grad():
                 vloss = 0.
+                vacc = 0.
                 for i, data in enumerate(validation_dataloader):
                     vinputs, vlabels = data
                     vpredicts = self.forward(vinputs)
                     vloss += LOSS_FN(vpredicts, vlabels)
+                    vacc += self.accuracy(vpredicts, vlabels)
                 vloss /= i+1
-
-                print(f"  Validation loss: {vloss}, loss: {save_loss}")
+                vacc /=  (len(validation_dataloader) * validation_dataloader.batch_size)
+                print(f"  Validation loss: {vloss}, accuracy: {vacc}, loss: {save_loss}")
 
                 if vloss < best_vloss:
                     best_vloss = vloss
@@ -163,10 +180,5 @@ if __name__ == "__main__":
     model.fit(train_dataloader,
             validation_dataloader,
             learning_rate=LEARNING_RATE,
-            epochs=5)
+            epochs=1)
         
-
-
-
-
-
