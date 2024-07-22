@@ -49,12 +49,20 @@ class CharModel(torch.nn.Module):
 
         # MODEL ARCHITECTURE
         # first convolutional block
-        self.conv1 = torch.nn.Conv2d(1, 32, 3, 1)
+        self.conv1 = torch.nn.Conv2d(1, 16, 3, 1)
         self.padd1 = torch.nn.MaxPool2d(2, 2)
+        self.bn1 = torch.nn.BatchNorm2d(16)
 
         # second convolutional block
-        self.conv2 = torch.nn.Conv2d(32, 16, 3, 1)
-        self.padd2 = torch.nn.MaxPool2d(3,3)
+        self.conv2 = torch.nn.Conv2d(16, 32, 3, 1)
+        self.padd2 = torch.nn.MaxPool2d(2, 2)
+        self.bn2 = torch.nn.BatchNorm2d(32)
+        
+
+        # third convolutional block
+        self.conv3 = torch.nn.Conv2d(32, 64, 3, 1)
+        self.padd3 = torch.nn.MaxPool2d(2, 2)
+        self.bn3 = torch.nn.BatchNorm2d(64)
 
         # Linear block
         #    flatten convolutions into vectors
@@ -64,29 +72,51 @@ class CharModel(torch.nn.Module):
 
         #    Activation added inbetween blocks
         self.activation = torch.nn.functional.relu
+
+        self.dropout1 = torch.nn.Dropout(0.3)
+        self.dropoutcnn = torch.nn.Dropout2d(0.3)
         
 
-    def forward(self, x: torch.tensor) -> torch.tensor:
-        dims = len(x.shape)
+    def forward(self,
+                x: torch.tensor,
+                is_training: bool = False
+                ) -> torch.tensor:
+
         # Flow of single character image
-        # input shape = (1,32,32)
-        x = self.conv1(x) # shape = (32,30,30)
-        x = self.padd1(x) # shape = (32,15,15)
-        x = self.activation(x) # shape = (32,15,15)
+        # input shape = (1, 1,32,32)
+        if len(x.shape) == 3: #change shape if input is 3D tensor
+            x = x.reshape((1,1,32,32))
 
-        x = self.conv2(x) # shape = (16,13,13)
-        x = self.padd2(x) # shape = (16,4,4)
-        x = self.activation(x) # shape = (16,4,4)
+        x = self.conv1(x) # shape = (1,16,30,30)
+        x = self.padd1(x) # shape = (1,16,15,15)
+        x = self.bn1(x) # shape = (1,16,15,15)
+        x = self.activation(x) # shape = (1,16,15,15)
+        if is_training:
+            x = self.dropoutcnn(x)
 
-        if dims == 4: # Choose the appriopriate flattening technique, depending if x is a single image or batch
-            x= torch.flatten(x, start_dim=1) # shape = (256)
-        else:
-            x = torch.flatten(x, start_dim = 0) # shape = (256)
+        x = self.conv2(x) # shape = (1,32,13,13)
+        x = self.padd2(x) # shape = (1,32,6,6)
+        x = self.bn2(x)
+        x = self.activation(x) # shape = (1,32,6,6)
+        if is_training:
+            x = self.dropoutcnn(x)
 
-        x = self.linear1(x) # shape = (64)
-        x = self.activation(x)
+        x = self.conv3(x) # shape = (1,64,4,4)
+        x = self.padd3(x) # shape = (1,64,2,2)
+        x = self.bn3(x) # shape = (1,64,2,2)
+        x = self.activation(x) # shape = (1,64,2,2)  
+        if is_training:
+            x = self.dropoutcnn(x)
 
-        x = self.linear2(x) # shape = (19)
+        x = self.flatten(x) # shape (1,256)
+
+        x = self.linear1(x) # shape = (1,64)
+
+        if is_training:
+            x = self.dropout1(x)
+
+        x = self.activation(x) # shape = (1,64)
+        x = self.linear2(x) # shape = (1,19)
         return x
     
     def accuracy(self,
@@ -121,7 +151,7 @@ class CharModel(torch.nn.Module):
                 OPTIMIZER.zero_grad()
 
                 # Forward pass:
-                predictions = self.forward(inputs)
+                predictions = self.forward(inputs, is_training= True)
 
                 # calculate loss and gradients
                 loss = LOSS_FN(predictions, labels)
@@ -131,9 +161,9 @@ class CharModel(torch.nn.Module):
                 OPTIMIZER.step()
                 
                 if i % 5 == 4:
-                    print("    Batch: {} ||{}{}|| Loss: {}".format(
+                    print(u"    Batch: {} \u2551{}{}\u2551 Loss: {}".format(
                         str(i+1).zfill(3), # batch number
-                        "#" * int((i+1)/5), # progress bar which is completed
+                        u"\u2588" * int((i+1)/5), # progress bar which is completed
                         " " * int(len(train_dataloader)/5 - (i+1)/5), # progress bar which is empty
                         loss.item()), end="\r") # loss value, end arguments makes print() function replace last displayed message in console
                     save_loss += loss.item()
@@ -152,14 +182,14 @@ class CharModel(torch.nn.Module):
                     vacc += self.accuracy(vpredicts, vlabels)
                 vloss /= i+1
                 vacc /=  (len(validation_dataloader) * validation_dataloader.batch_size)
-                print(f"  Validation loss: {vloss}, accuracy: {vacc}, loss: {save_loss}")
+                print(f"  Validation loss: {vloss},  validation accuracy: {vacc}, loss: {save_loss}")
 
                 if vloss < best_vloss:
                     best_vloss = vloss
                     torch.save(self.state_dict(), "model.pt")
-                    print("  Best perrformance up to date, model saved.")
+                    print('\33[32m' + "  Best performance up to date, model saved.", '\33[0m')
                 else:
-                    print("  Smaller validation loss, model wasn't saved")
+                    print('\33[31m', "  Smaller validation loss, model wasn't saved", '\33[0m')
             
                 
 if __name__ == "__main__":
@@ -180,5 +210,5 @@ if __name__ == "__main__":
     model.fit(train_dataloader,
             validation_dataloader,
             learning_rate=LEARNING_RATE,
-            epochs=1)
+            epochs=25)
         
