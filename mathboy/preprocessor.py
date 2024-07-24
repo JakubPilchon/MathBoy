@@ -1,5 +1,7 @@
 import cv2 as cv
 import os
+import torch
+from ..model_train import CharModel
 
 class Preprocessor:
     
