@@ -1,7 +1,7 @@
 import cv2 as cv
 import os
 import torch
-from ..model_train import CharModel
+from model_train.train import CharModel
 
 class Preprocessor:
     
@@ -14,6 +14,8 @@ class Preprocessor:
 
         #Constants:
         self.KERNEL = (4,11)
+
+        self.model = CharModel()
 
     def get_rectangles(self):
         # Convert image to Grayscale
@@ -95,4 +97,5 @@ class Preprocessor:
 
 if __name__ == "__main__":
     pre = Preprocessor()
+    print(pre.model)
     pre.open_img()
