@@ -79,27 +79,10 @@ class Preprocessor:
             if w > 30:
                 rectangles.append((x,y,w,h))
         
-        return rectangles
-    
-    def get_character(self, images: Pillow_image, rectangles: Bounding_boxes) -> List[Character]:
-        
-
-        for n, (x,y,w,h) in enumerate(rectangles):
-            char = preprocessed_img[y:y+h, x:x+w]
-            print(x, y)
-            try:
-                #char = cv.resize(char, (32,32), interpolation=cv.INTER_AREA)
-                char = self.transforms(char)
-                #cv.imshow(f"character{n}", char)
-                char = torch.reshape(char, (1,1,32,32))
-                char_class = torch.argmax(self.model.forward(char))
-                print("class = ",os.listdir("model_train/dataset")[char_class])
-            except Exception as e:
-                print("ERROR: ", e)
-                print("ERROR CHARACTER SHAPE: ",char.shape)
+        return rectangles   
 
     def get_characters(self, image: Pillow_image, bounding_boxes:Bounding_boxes) -> List[Character]:
-        #image = self.transforms(image)
+
         character_list = []
         for (x, y, w, h) in bounding_boxes:
             character = image.crop((x, y, x+w, y+h))
