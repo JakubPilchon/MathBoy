@@ -8,15 +8,12 @@ class Applicaion(tk.Tk):
 
     def __button_click(self):
         self.__get_picture()
-
-        pre = Preprocessor()
+        img = self.preprocessor.get_picture()
         #rectangles = pre.get_rectangles()
-        for x,y,w,h in pre.get_rectangles():
+        for x,y,w,h in self.preprocessor.get_rectangles(img):
             self.canvas.create_rectangle(((x,y), (x+w, y+h)))
 
-        pre.get_characters(pre.get_rectangles())
-
-
+        self.preprocessor.get_characters(img, self.preprocessor.get_rectangles(img))
 
     def __paint(self, event):
         """creates oval in place where mouse is."""
@@ -48,6 +45,8 @@ class Applicaion(tk.Tk):
 
     def __init__(self):
         super().__init__()
+
+        self.preprocessor = Preprocessor()
         
         # Options
         self.geometry("1250x750")

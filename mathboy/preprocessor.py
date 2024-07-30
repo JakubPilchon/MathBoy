@@ -1,7 +1,13 @@
 import cv2 as cv
 import os
 import torch
+#from torchvision.transforms import Grayscale, RandomRotation, Compose, ConvertImageDt
+from torchvision import transforms
+from dataclasses import dataclass
+from typing import List, Tuple
 from model_train.train import CharModel
+
+
 
 class Preprocessor:
     
@@ -16,10 +22,26 @@ class Preprocessor:
         self.KERNEL = (4,11)
 
         self.model = CharModel()
+        self.model.load_state_dict(torch.load("model.pt"))
 
-    def get_rectangles(self):
+        self.transforms = transforms.Compose([
+            transforms.ToTensor(),
+            #transforms.Grayscale(1),
+            transforms.ConvertImageDtype(torch.float),
+            transforms.Resize((32,32))])
+
+    def get_picture(self):
+        try:
+            img = cv.imread("img.jpg")
+            img = img[:689, :1249]
+        except Exception as e:
+            print(e)
+        
+        return img
+    
+    def get_rectangles(self, image: cv.typing.MatLike) -> List[Tuple[int,int,int,int]]:
         # Convert image to Grayscale
-        img_pre = cv.cvtColor(self.img, cv.COLOR_BGR2GRAY)
+        img_pre = cv.cvtColor(image, cv.COLOR_BGR2GRAY)
         # Thresholding technique on image, makes every character black
         _, img_pre = cv.threshold(img_pre, 240, 255, cv.THRESH_OTSU)
         # Crops image, because loaded up image is 4 pixels higher and wider than it should be
@@ -42,23 +64,26 @@ class Preprocessor:
         
         return rectangles
     
-    def get_characters(self, rectangles: list):
+    def get_characters(self, image, rectangles: List[Tuple[int, int, int, int]]) -> None:
         assert isinstance(rectangles, list)
 
-        preprocessed_img =cv.cvtColor(self.img, cv.COLOR_BGR2GRAY)
+        preprocessed_img =cv.cvtColor(image, cv.COLOR_BGR2GRAY)
         _, preprocessed_img = cv.threshold(preprocessed_img, 240, 255, cv.THRESH_OTSU)
         preprocessed_img = cv.bitwise_not(preprocessed_img)
 
         for n, (x,y,w,h) in enumerate(rectangles):
             char = preprocessed_img[y:y+h, x:x+w]
-            print(char.shape)
+            print(x, y)
             try:
-                char = cv.resize(char, (32,32), interpolation=cv.INTER_AREA)
-                cv.imshow(f"character{n}", char)
+                #char = cv.resize(char, (32,32), interpolation=cv.INTER_AREA)
+                char = self.transforms(char)
+                #cv.imshow(f"character{n}", char)
+                char = torch.reshape(char, (1,1,32,32))
+                char_class = torch.argmax(self.model.forward(char))
+                print("class = ",os.listdir("model_train/dataset")[char_class])
             except Exception as e:
                 print("ERROR: ", e)
                 print("ERROR CHARACTER SHAPE: ",char.shape)
-        k = cv.waitKey(0)
         
     def open_img(self):
         # check if file exists 
@@ -98,4 +123,4 @@ class Preprocessor:
 if __name__ == "__main__":
     pre = Preprocessor()
     print(pre.model)
-    pre.open_img()
+    #pre.open_img()

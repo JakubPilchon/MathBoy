@@ -20,7 +20,7 @@ class MathCharactersDataset(torch.utils.data.Dataset):
         self.transforms = Compose([
             Grayscale(num_output_channels=1),
             ConvertImageDtype(torch.float),
-            RandomRotation((-30,30)),
+            RandomRotation((-10,10)),
             ])
         
         ## get dataset annotations
@@ -67,8 +67,10 @@ class CharModel(torch.nn.Module):
         # Linear block
         #    flatten convolutions into vectors
         self.flatten = torch.nn.Flatten()
-        self.linear1 = torch.nn.Linear(256, 64)
-        self.linear2 = torch.nn.Linear(64, 19)
+        self.linear1 = torch.nn.Linear(256, 128)
+        self.linear2 = torch.nn.Linear(128,64)
+        self.linear3 = torch.nn.Linear(64, 19)
+        
 
         #    Activation added inbetween blocks
         self.activation = torch.nn.functional.relu
@@ -116,7 +118,13 @@ class CharModel(torch.nn.Module):
             x = self.dropout1(x)
 
         x = self.activation(x) # shape = (1,64)
-        x = self.linear2(x) # shape = (1,19)
+
+        x = self.linear2(x) # shape = (1,64)
+        if is_training:
+            x = self.dropout1(x)
+        x = self.activation(x) # shape = (1,64)
+
+        x = self.linear3(x) # shape = (1,19)
         return x
     
     def accuracy(self,
@@ -210,5 +218,5 @@ if __name__ == "__main__":
     model.fit(train_dataloader,
             validation_dataloader,
             learning_rate=LEARNING_RATE,
-            epochs=25)
+            epochs=35)
         
