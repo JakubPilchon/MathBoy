@@ -1,25 +1,31 @@
 import tkinter as tk
 from tkinter import ttk
 from PIL import ImageGrab
+from PIL import Image
 from preprocessor import Preprocessor
 
 
 class Applicaion(tk.Tk):
 
     def __button_click(self):
-        self.__get_picture()
-        img = self.preprocessor.get_picture()
-        #rectangles = pre.get_rectangles()
-        for x,y,w,h in self.preprocessor.get_rectangles(img):
-            self.canvas.create_rectangle(((x,y), (x+w, y+h)))
+        img = self.__get_picture()
+        #boxes = self.preprocessor.get_bounding_boxes(img)
+        chars = self.preprocessor.get_characters(img, self.preprocessor.get_bounding_boxes(img))
 
-        self.preprocessor.get_characters(img, self.preprocessor.get_rectangles(img))
+        for c in chars:
+            self.canvas.create_rectangle(((c.x, c.y), (c.x + c.w, c.y+ c.h)))
+            self.canvas.create_text(c.x, c.y+10, text=c.label)
+            print(c)
 
     def __paint(self, event):
         """creates oval in place where mouse is."""
         if self.is_painting:
-            
-            self.canvas.create_oval(event.x- self.scale.get(), event.y-self.scale.get(), event.x+self.scale.get(), event.y+self.scale.get(), fill=self.color.get(), width=0)
+            self.canvas.create_oval(event.x- self.scale.get(),
+                                    event.y-self.scale.get(),
+                                    event.x+self.scale.get(),
+                                    event.y+self.scale.get(),
+                                    fill=self.color.get(),
+                                     width=0)
 
     def __start_paint(self, event):
         self.is_painting = True
@@ -31,7 +37,7 @@ class Applicaion(tk.Tk):
         """deletes all painting from canvas"""
         self.canvas.delete("all")
 
-    def __get_picture(self):
+    def __get_picture(self) -> Image.Image:
         """Screenshots Canvas in order to save is as bitmap image."""
         # canvas coordinates
         x1 = self.winfo_rootx() + self.canvas.winfo_x()
@@ -40,8 +46,10 @@ class Applicaion(tk.Tk):
         x2 = x1 + self.canvas.winfo_width()
         y2 = y1 + self.canvas.winfo_height()
         
-        img = ImageGrab.grab((x1,y1,x2,y2))
-        img.save("img.jpg")
+        img = ImageGrab.grab((x1,y1,x2,y2), all_screens=True)
+        #img = img[:689, :1249]
+        img = img.crop((0,0,1249, 689))
+        return img
 
     def __init__(self):
         super().__init__()
