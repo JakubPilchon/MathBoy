@@ -49,25 +49,25 @@ class CharModel(torch.nn.Module):
 
         # MODEL ARCHITECTURE
         # first convolutional block
-        self.conv1 = torch.nn.Conv2d(1, 16, 3, 1)
+        self.conv1 = torch.nn.Conv2d(1, 16, 3, 1, 1)
         self.padd1 = torch.nn.MaxPool2d(2, 2)
         self.bn1 = torch.nn.BatchNorm2d(16)
 
         # second convolutional block
-        self.conv2 = torch.nn.Conv2d(16, 32, 3, 1)
+        self.conv2 = torch.nn.Conv2d(16, 32, 3, 1, 1)
         self.padd2 = torch.nn.MaxPool2d(2, 2)
         self.bn2 = torch.nn.BatchNorm2d(32)
         
 
         # third convolutional block
-        self.conv3 = torch.nn.Conv2d(32, 64, 3, 1)
+        self.conv3 = torch.nn.Conv2d(32, 64, 3, 1, 1)
         self.padd3 = torch.nn.MaxPool2d(2, 2)
         self.bn3 = torch.nn.BatchNorm2d(64)
 
         # Linear block
         #    flatten convolutions into vectors
         self.flatten = torch.nn.Flatten()
-        self.linear1 = torch.nn.Linear(256, 128)
+        self.linear1 = torch.nn.Linear(1024, 128)
         self.linear2 = torch.nn.Linear(128,64)
         self.linear3 = torch.nn.Linear(64, 19)
         
@@ -131,6 +131,7 @@ class CharModel(torch.nn.Module):
                  predicts: torch.tensor,
                  labels: torch.tensor
                  ) -> torch.float:
+        """Get accuracy of model"""
         predicts = torch.argmax(predicts, dim=1)
         labels = torch.argmax(labels, dim=1)
         return torch.sum(predicts.eq(labels).float())
@@ -215,6 +216,7 @@ if __name__ == "__main__":
     validation_dataloader = torch.utils.data.DataLoader(validation_dataset, batch_size=16, shuffle=True)
 
     model = CharModel()
+    #model.forward(train_dataset[1][0])
     model.fit(train_dataloader,
             validation_dataloader,
             learning_rate=LEARNING_RATE,

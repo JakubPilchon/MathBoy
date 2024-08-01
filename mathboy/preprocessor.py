@@ -25,7 +25,7 @@ class Character:
         return (self.x, self.y, self.x + self.w, self.y + self.h)
     
     def __repr__(self) -> str:
-        return f'<character: "{self.label}" at ({self.x}, {self.y}, {self.x + self.w}, {self.y + self.h})>'
+        return f'<character: "{self.label}" at ({self.x}, {self.y}, {self.w}, {self.h})>'
 
 
 class Preprocessor:
@@ -41,8 +41,8 @@ class Preprocessor:
             v2.ToImage(),
             v2.ToDtype(torch.float32, scale=True),
             v2.Grayscale(),
-            v2.Resize((32,32))
-            #v2.Lambda(lambda )
+            v2.Resize((32,32)),
+            v2.Lambda(v2.functional.invert)
         ])
 
     def get_picture(self):
@@ -136,8 +136,13 @@ if __name__ == "__main__":
     boxes = pre.get_bounding_boxes(image)
     chars = pre.get_characters(image, boxes)
 
-    for char in chars:
-        print(char)
+    #for char in chars:
+    #    print(char)
+    x,y,w,h = boxes[1]
+    char = image.crop((x, y, w+x, y+h))
+    char = pre.transforms(char)
+    char = v2.functional.to_pil_image(char)
+    char.show("`1")
     #print(x,y,w,h)scs
     #image = image.convert("L")
     #image = image.crop((x, y, w+x, y+h))
