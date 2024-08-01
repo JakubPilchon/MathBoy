@@ -5,7 +5,7 @@ import torch.utils
 import torch.utils.data
 from torchvision.io import read_image
 from torchvision.transforms import Grayscale, RandomRotation, Compose, ConvertImageDtype
-from typing import Tuple
+from typing import Tuple, Dict
 ## set device
 
 class MathCharactersDataset(torch.utils.data.Dataset):
@@ -20,13 +20,16 @@ class MathCharactersDataset(torch.utils.data.Dataset):
         self.transforms = Compose([
             Grayscale(num_output_channels=1),
             ConvertImageDtype(torch.float),
-            RandomRotation((-10,10)),
+            RandomRotation((-10,10))
             ])
         
+        # labels pairs maping number to string representation
+        self.labels = {}
         ## get dataset annotations
         for i, class_name in enumerate(list_of_dirs):
             class_dist = torch.zeros(( len(list_of_dirs)), dtype=torch.float32)
             class_dist[i] = 1.
+            self.labels[i] = class_name
             for data_name in os.listdir(os.path.join(self.dir, class_name)):
                 self.data.append((os.path.join(self.dir, class_name, data_name), class_dist))
 
@@ -136,6 +139,27 @@ class CharModel(torch.nn.Module):
         labels = torch.argmax(labels, dim=1)
         return torch.sum(predicts.eq(labels).float())
     
+    def confusion_matrix(self, 
+                        validation_dataloader: torch.utils.data.DataLoader,
+                        labels_dict: Dict[int, str]
+                        ) -> Dict[int, Dict[int, int]]:
+        """Generate confusion matrix for classification task"""
+
+        confusion_matrix = {i:{c:0 for c in labels_dict.values()} for i in labels_dict.values()}
+
+        with torch.no_grad():
+            for data in validation_dataloader:
+                        vinputs, vlabels = data
+                        vpredicts = self.forward(vinputs)
+
+                        vlabels = torch.argmax(vlabels, dim=1)
+                        vpredicts = torch.argmax(vpredicts, dim=1)
+
+                        for vl, vp in zip(vlabels, vpredicts):
+                            confusion_matrix[labels_dict[int(vl)]][labels_dict[int(vp)]] += 1 
+
+        return confusion_matrix
+    
     def fit(self,
             train_dataloader: torch.utils.data.DataLoader,
             validation_dataloader: torch.utils.data.DataLoader,
@@ -143,6 +167,7 @@ class CharModel(torch.nn.Module):
             epochs: int = 5
             ) -> None:
         
+        """Main training loop"""
         # define model optimizer and loss function
         OPTIMIZER = torch.optim.Adam(self.parameters(), learning_rate)
         LOSS_FN = torch.nn.CrossEntropyLoss()
@@ -220,5 +245,16 @@ if __name__ == "__main__":
     model.fit(train_dataloader,
             validation_dataloader,
             learning_rate=LEARNING_RATE,
-            epochs=35)
-        
+            epochs=25)
+    
+    con = model.confusion_matrix(validation_dataloader, dataset.labels)
+
+    ## print confusion matrix in readable way
+    print("CONFUSION MATRIX")
+    print(u"\033[4m    \u2551" + u"\u2551".join(list(f"{z.center(4, " ")}" for z in con)) + u"\u2551 \033[0m")
+    for n in con:
+        tab = u"\u2551"
+        for m in con[n].values():
+            tab += str(m).center(4)
+            tab += u"\u2551"
+        print(n.ljust(3), tab)
