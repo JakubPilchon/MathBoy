@@ -7,17 +7,17 @@ from preprocessor import Preprocessor
 
 class Applicaion(tk.Tk):
 
-    def __button_click(self):
+    def __button_click(self) -> None:
         img = self.__get_picture()
         #boxes = self.preprocessor.get_bounding_boxes(img)
         chars = self.preprocessor.get_characters(img, self.preprocessor.get_bounding_boxes(img))
 
         for c in chars:
             self.canvas.create_rectangle(((c.x, c.y), (c.x + c.w, c.y+ c.h)))
-            self.canvas.create_text(c.x, c.y+10, text=c.label)
+            self.canvas.create_text(c.x, c.y+10, text=c.label,  font=('Helvetica 24 bold'))
             print(c)
 
-    def __paint(self, event):
+    def __paint(self, event) -> None:
         """creates oval in place where mouse is."""
         if self.is_painting:
             self.canvas.create_oval(event.x- self.scale.get(),
@@ -27,13 +27,13 @@ class Applicaion(tk.Tk):
                                     fill=self.color.get(),
                                      width=0)
 
-    def __start_paint(self, event):
+    def __start_paint(self, event) -> None:
         self.is_painting = True
 
-    def __stop_paint(self, event):
+    def __stop_paint(self, event) -> None:
         self.is_painting = False
     
-    def __reset(self):
+    def __reset(self) -> None:
         """deletes all painting from canvas"""
         self.canvas.delete("all")
 

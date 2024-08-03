@@ -26,6 +26,7 @@ class MathCharactersDataset(torch.utils.data.Dataset):
         # labels pairs maping number to string representation
         self.labels = {}
         ## get dataset annotations
+        # reframe labels into propabilities distros e.g. [0,0,0,1,0,...]
         for i, class_name in enumerate(list_of_dirs):
             class_dist = torch.zeros(( len(list_of_dirs)), dtype=torch.float32)
             class_dist[i] = 1.
@@ -86,7 +87,7 @@ class CharModel(torch.nn.Module):
                 x: torch.tensor,
                 is_training: bool = False
                 ) -> torch.tensor:
-
+        """Forward pass of convolutional neural network"""
         # Flow of single character image
         # input shape = (1, 1,32,32)
         if len(x.shape) == 3: #change shape if input is 3D tensor
@@ -96,35 +97,30 @@ class CharModel(torch.nn.Module):
         x = self.padd1(x) # shape = (1,16,15,15)
         x = self.bn1(x) # shape = (1,16,15,15)
         x = self.activation(x) # shape = (1,16,15,15)
-        if is_training:
-            x = self.dropoutcnn(x)
+        if is_training: x = self.dropoutcnn(x)
 
         x = self.conv2(x) # shape = (1,32,13,13)
         x = self.padd2(x) # shape = (1,32,6,6)
         x = self.bn2(x)
         x = self.activation(x) # shape = (1,32,6,6)
-        if is_training:
-            x = self.dropoutcnn(x)
+        if is_training: x = self.dropoutcnn(x)
 
         x = self.conv3(x) # shape = (1,64,4,4)
         x = self.padd3(x) # shape = (1,64,2,2)
         x = self.bn3(x) # shape = (1,64,2,2)
         x = self.activation(x) # shape = (1,64,2,2)  
-        if is_training:
-            x = self.dropoutcnn(x)
+        if is_training: x = self.dropoutcnn(x)
 
         x = self.flatten(x) # shape (1,256)
 
         x = self.linear1(x) # shape = (1,64)
 
-        if is_training:
-            x = self.dropout1(x)
+        if is_training: x = self.dropout1(x)
 
         x = self.activation(x) # shape = (1,64)
 
         x = self.linear2(x) # shape = (1,64)
-        if is_training:
-            x = self.dropout1(x)
+        if is_training: x = self.dropout1(x)
         x = self.activation(x) # shape = (1,64)
 
         x = self.linear3(x) # shape = (1,19)
@@ -142,21 +138,21 @@ class CharModel(torch.nn.Module):
     def confusion_matrix(self, 
                         validation_dataloader: torch.utils.data.DataLoader,
                         labels_dict: Dict[int, str]
-                        ) -> Dict[int, Dict[int, int]]:
+                        ) -> Dict[str, Dict[str, int]]:
         """Generate confusion matrix for classification task"""
 
         confusion_matrix = {i:{c:0 for c in labels_dict.values()} for i in labels_dict.values()}
 
         with torch.no_grad():
             for data in validation_dataloader:
-                        vinputs, vlabels = data
-                        vpredicts = self.forward(vinputs)
+                vinputs, vlabels = data
+                vpredicts = self.forward(vinputs)
 
-                        vlabels = torch.argmax(vlabels, dim=1)
-                        vpredicts = torch.argmax(vpredicts, dim=1)
+                vlabels = torch.argmax(vlabels, dim=1)
+                vpredicts = torch.argmax(vpredicts, dim=1)
 
-                        for vl, vp in zip(vlabels, vpredicts):
-                            confusion_matrix[labels_dict[int(vl)]][labels_dict[int(vp)]] += 1 
+                for vl, vp in zip(vlabels, vpredicts):
+                    confusion_matrix[labels_dict[int(vl)]][labels_dict[int(vp)]] += 1 
 
         return confusion_matrix
     
