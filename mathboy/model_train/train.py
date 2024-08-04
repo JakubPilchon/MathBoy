@@ -1,48 +1,59 @@
 import torch
 import os
-import numpy as np
 import torch.utils
 import torch.utils.data
 from torchvision.io import read_image
-from torchvision.transforms import Grayscale, RandomRotation, Compose, ConvertImageDtype
-from typing import Tuple, Dict
+from torchvision.transforms.v2 import Grayscale, RandomRotation, Compose, ConvertImageDtype, Lambda
+from torchvision.transforms.v2.functional import invert
+from typing import Tuple, Dict, List
 ## set device
 
 class MathCharactersDataset(torch.utils.data.Dataset):
     def __init__(self, dir: str | os.PathLike):
-        assert os.path.isdir(dir)
+        assert os.path.isdir(dir), "Provided directory is not valid"
         super().__init__()
 
-        self.dir = dir
-        self.data = []
-        list_of_dirs = os.listdir(self.dir)
+        self.dir: str = dir
+        self.data: List[Tuple[os.PathLike | str, str]] = []
+        self.list_of_classes = []
+
+        # labels pairs maping number to string representation
+        self.labels: Dict[int, str] = {}
+        # maping string to number representation
+        self.rev_labels: Dict[str, int] = {}
 
         self.transforms = Compose([
             Grayscale(num_output_channels=1),
+            Lambda(invert),
             ConvertImageDtype(torch.float),
             RandomRotation((-10,10))
             ])
         
-        # labels pairs maping number to string representation
-        self.labels = {}
         ## get dataset annotations
-        # reframe labels into propabilities distros e.g. [0,0,0,1,0,...]
-        for i, class_name in enumerate(list_of_dirs):
-            class_dist = torch.zeros(( len(list_of_dirs)), dtype=torch.float32)
-            class_dist[i] = 1.
-            self.labels[i] = class_name
-            for data_name in os.listdir(os.path.join(self.dir, class_name)):
-                self.data.append((os.path.join(self.dir, class_name, data_name), class_dist))
+        self.num_classes = 0
+        for file in os.listdir(dir):
+            classname = file.split('-')[0]
+
+            if classname not in self.rev_labels.keys():
+                self.labels[self.num_classes] = classname
+                self.rev_labels[classname] = self.num_classes
+                self.num_classes += 1
+
+            self.data.append((os.path.join(self.dir, file), self.rev_labels[classname]))
 
     def __len__(self) -> int:
         return len(self.data)
     
-    def __getitem__(self, index: int) -> Tuple[torch.tensor, str]:
+    def __getitem__(self, index: int) -> Tuple[torch.tensor, torch.tensor]:
         if not isinstance(index, slice):
             img, class_name = self.data[index]
             img = read_image(img)
             img = self.transforms(img)
-            return (img, class_name)
+
+            target = torch.zeros(self.num_classes)
+            target[class_name] = 1.
+
+            return (img, target)
         else:
             raise TypeError("MathCharactersDataset does not support slicing")
 
@@ -223,7 +234,7 @@ class CharModel(torch.nn.Module):
             
                 
 if __name__ == "__main__":
-    dataset = MathCharactersDataset("dataset")
+    dataset = MathCharactersDataset("symbols")
 
     TRAIN_TEST_SPLIT = 0.8
     LEARNING_RATE = .01
@@ -237,20 +248,21 @@ if __name__ == "__main__":
     validation_dataloader = torch.utils.data.DataLoader(validation_dataset, batch_size=16, shuffle=True)
 
     model = CharModel()
+    #print(dataset[1002])
     #model.forward(train_dataset[1][0])
-    model.fit(train_dataloader,
-            validation_dataloader,
-            learning_rate=LEARNING_RATE,
-            epochs=25)
+    #model.fit(train_dataloader,
+    #        validation_dataloader,
+    #        learning_rate=LEARNING_RATE,
+    #        epochs=25)
     
-    con = model.confusion_matrix(validation_dataloader, dataset.labels)
+    #con = model.confusion_matrix(validation_dataloader, dataset.labels)
 
     ## print confusion matrix in readable way
-    print("CONFUSION MATRIX")
-    print(u"\033[4m    \u2551" + u"\u2551".join(list(f"{z.center(4, " ")}" for z in con)) + u"\u2551 \033[0m")
-    for n in con:
-        tab = u"\u2551"
-        for m in con[n].values():
-            tab += str(m).center(4)
-            tab += u"\u2551"
-        print(n.ljust(3), tab)
+    #print("CONFUSION MATRIX")
+    #print(u"\033[4m    \u2551" + u"\u2551".join(list(f"{z.center(4, " ")}" for z in con)) + u"\u2551 \033[0m")
+    #for n in con:
+    ##    tab = u"\u2551"
+    #    for m in con[n].values():
+    #        tab += str(m).center(4)
+    #        tab += u"\u2551"
+    #    print(n.ljust(3), tab)
