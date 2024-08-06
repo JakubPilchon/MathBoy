@@ -30,7 +30,7 @@ class MathCharactersDataset(torch.utils.data.Dataset):
             ])
         
         ## get dataset annotations
-        self.num_classes = 0
+        self.num_classes: int = 0
         for file in os.listdir(dir):
             classname = file.split('-')[0]
 
@@ -75,15 +75,15 @@ class CharModel(torch.nn.Module):
         
 
         # third convolutional block
-        self.conv3 = torch.nn.Conv2d(32, 64, 3, 1, 1)
-        self.padd3 = torch.nn.MaxPool2d(2, 2)
-        self.bn3 = torch.nn.BatchNorm2d(64)
+        self.conv3 = torch.nn.Conv2d(32, 32, 3, 1, 1)
+        self.padd3 = torch.nn.MaxPool2d(2, 1)
+        self.bn3 = torch.nn.BatchNorm2d(32)
 
         # Linear block
         #    flatten convolutions into vectors
         self.flatten = torch.nn.Flatten()
-        self.linear1 = torch.nn.Linear(1024, 128)
-        self.linear2 = torch.nn.Linear(128,64)
+        self.linear1 = torch.nn.Linear(1152, 258)
+        self.linear2 = torch.nn.Linear(258,64)
         self.linear3 = torch.nn.Linear(64, 19)
         
 
@@ -100,31 +100,31 @@ class CharModel(torch.nn.Module):
                 ) -> torch.tensor:
         """Forward pass of convolutional neural network"""
         # Flow of single character image
-        # input shape = (1, 1,32,32)
+        # input shape = (1, 1, 28, 28)
         if len(x.shape) == 3: #change shape if input is 3D tensor
-            x = x.reshape((1,1,32,32))
+            x = x.reshape((1,1,28,28))
 
-        x = self.conv1(x) # shape = (1,16,30,30)
-        x = self.padd1(x) # shape = (1,16,15,15)
-        x = self.bn1(x) # shape = (1,16,15,15)
-        x = self.activation(x) # shape = (1,16,15,15)
+        x = self.conv1(x) # shape = (1,16, 28, 28)
+        x = self.padd1(x) # shape = (1,16,14,14)
+        x = self.bn1(x) # shape = (1,16,14,14)
+        x = self.activation(x) # shape = (1,16,14,14)
         if is_training: x = self.dropoutcnn(x)
 
-        x = self.conv2(x) # shape = (1,32,13,13)
-        x = self.padd2(x) # shape = (1,32,6,6)
-        x = self.bn2(x)
-        x = self.activation(x) # shape = (1,32,6,6)
+        x = self.conv2(x) # shape = (1,32,13,14,14)
+        x = self.padd2(x) # shape = (1,32,7,7)
+        x = self.bn2(x) # shape = (1,32,7,7,)
+        x = self.activation(x) # shape = (1,32,7,7)
         if is_training: x = self.dropoutcnn(x)
 
-        x = self.conv3(x) # shape = (1,64,4,4)
-        x = self.padd3(x) # shape = (1,64,2,2)
-        x = self.bn3(x) # shape = (1,64,2,2)
-        x = self.activation(x) # shape = (1,64,2,2)  
+        x = self.conv3(x) # shape = (1,32,7,7)
+        x = self.padd3(x) # shape = (1,32,6,6)
+        x = self.bn3(x) # shape = (1,32,6,6)
+        x = self.activation(x) # shape = (1,32,6,6)  
         if is_training: x = self.dropoutcnn(x)
 
-        x = self.flatten(x) # shape (1,256)
+        x = self.flatten(x) # shape (1,1152)
 
-        x = self.linear1(x) # shape = (1,64)
+        x = self.linear1(x) # shape = (1,258)
 
         if is_training: x = self.dropout1(x)
 
@@ -134,7 +134,7 @@ class CharModel(torch.nn.Module):
         if is_training: x = self.dropout1(x)
         x = self.activation(x) # shape = (1,64)
 
-        x = self.linear3(x) # shape = (1,19)
+        x = self.linear3(x) # shape = (1,18)
         return x
     
     def accuracy(self,
@@ -223,7 +223,7 @@ class CharModel(torch.nn.Module):
                     vacc += self.accuracy(vpredicts, vlabels)
                 vloss /= i+1
                 vacc /=  (len(validation_dataloader) * validation_dataloader.batch_size)
-                print(f"  Validation loss: {vloss},  validation accuracy: {vacc}, loss: {save_loss}")
+                print(f"\n  Validation loss: {vloss},  validation accuracy: {vacc}, loss: {save_loss}")
 
                 if vloss < best_vloss:
                     best_vloss = vloss
@@ -248,21 +248,22 @@ if __name__ == "__main__":
     validation_dataloader = torch.utils.data.DataLoader(validation_dataset, batch_size=16, shuffle=True)
 
     model = CharModel()
+    print(dataset.rev_labels)
     #print(dataset[1002])
     #model.forward(train_dataset[1][0])
-    #model.fit(train_dataloader,
-    #        validation_dataloader,
-    #        learning_rate=LEARNING_RATE,
-    #        epochs=25)
+    model.fit(train_dataloader,
+            validation_dataloader,
+            learning_rate=LEARNING_RATE,
+            epochs=7)
     
-    #con = model.confusion_matrix(validation_dataloader, dataset.labels)
+    con = model.confusion_matrix(validation_dataloader, dataset.labels)
 
     ## print confusion matrix in readable way
-    #print("CONFUSION MATRIX")
-    #print(u"\033[4m    \u2551" + u"\u2551".join(list(f"{z.center(4, " ")}" for z in con)) + u"\u2551 \033[0m")
-    #for n in con:
-    ##    tab = u"\u2551"
-    #    for m in con[n].values():
-    #        tab += str(m).center(4)
-    #        tab += u"\u2551"
-    #    print(n.ljust(3), tab)
+    print("CONFUSION MATRIX")
+    print(u"\033[4m  T\P \u2551" + u"\u2551".join(list(f"{z.center(5, " ")}" for z in con)) + u"\u2551 \033[0m")
+    for n in con:
+        tab = u"\u2551"
+        for m in con[n].values():
+            tab += str(m).center(5)
+            tab += u"\u2551"
+        print(n.ljust(5), tab)

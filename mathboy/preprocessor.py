@@ -4,7 +4,7 @@ import torch
 #from torchvision.transforms import Grayscale, RandomRotation, Compose, ConvertImageDt
 from torchvision.transforms import v2
 from dataclasses import dataclass
-from typing import List, Tuple, NewType
+from typing import List, Tuple, NewType, Dict
 from model_train.train import CharModel
 from PIL import Image, ImageChops
 import numpy as np
@@ -41,9 +41,15 @@ class Preprocessor:
             v2.ToImage(),
             v2.ToDtype(torch.float32, scale=True),
             v2.Grayscale(),
-            v2.Resize((32,32)),
+            v2.Resize((28,28)),
             v2.Lambda(v2.functional.invert)
         ])
+
+        self.classes_lookup: Dict[int, str] = {
+            0: "0", 1: "1", 2: "2", 3: "3", 4: "4",
+            5: "5", 6: "6", 7: "7", 8: "8", 9: "9",
+            10: "mul", 11: "eq", 12: "minus", 13: "plus",
+            14: "slash", 15: "w", 16: "x", 17: "y", 18: "z"}
 
     def get_picture(self):
         try:
@@ -88,7 +94,7 @@ class Preprocessor:
             character = image.crop((x, y, x+w, y+h))
             character = self.transforms(character)
             char_class = self.model.forward(character)
-            char_class = os.listdir("model_train/dataset")[torch.argmax(char_class)]
+            char_class = self.classes_lookup[int(torch.argmax(char_class))]
 
             character_list.append(Character(x,y,w,h, char_class))
 
