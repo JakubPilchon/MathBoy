@@ -32,7 +32,7 @@ class Preprocessor:
     
     def __init__(self):
         #Constants:
-        self.KERNEL = (4,11)
+        self.KERNEL = (3,9)
 
         self.model = CharModel()
         self.model.load_state_dict(torch.load("model.pt"))
@@ -73,7 +73,7 @@ class Preprocessor:
         img_pre = cv.bitwise_not(img_pre)
 
         # makes characters bigger, better for finding countours
-        dilated = cv.dilate(img_pre, cv.getStructuringElement(cv.MORPH_RECT, self.KERNEL), iterations=5)
+        dilated = cv.dilate(img_pre, cv.getStructuringElement(cv.MORPH_RECT, self.KERNEL), iterations=4)
 
         #finds contours of characters
         contours, _ = cv.findContours(dilated, cv.RETR_EXTERNAL, cv.CHAIN_APPROX_SIMPLE)
