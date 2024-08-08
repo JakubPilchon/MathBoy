@@ -99,6 +99,29 @@ class Preprocessor:
             character_list.append(Character(x,y,w,h, char_class))
 
         return character_list
+    
+    def cluster_datatset(self, characters: List[Character]) -> List[List[Character]]:
+        clusters = []
+
+        mean_h = sum([char.h for char in characters]) / len(characters)
+        characters.sort(key=lambda char: char.y)
+
+        while characters:
+            stack = []
+            char = characters.pop(0)
+            print(char)
+            stack.append(char)
+            print(stack)
+            for c in stack:
+                try:
+                    if (characters[0].y <= (c.y + mean_h)) and (characters[0].y >= (c.y - mean_h)):
+                        stack.append(characters.pop(0)) 
+                except IndexError:
+                    pass
+            clusters.append(stack)
+            
+
+        return clusters
 
         
     def open_img(self):
@@ -138,17 +161,26 @@ class Preprocessor:
 
 if __name__ == "__main__":
     pre = Preprocessor()
-    image = Image.open("img.jpg").crop((0,0,1240, 690))
-    boxes = pre.get_bounding_boxes(image)
-    chars = pre.get_characters(image, boxes)
+
+    y_values = [386, 347, 336, 311, 87, 59, 58, 45, 40, 35, 33]
+
+    # Tworzenie listy obiektów Character
+    characters = [
+        Character(x=i, y=y, w=10 + i, h=20 + i, label=f"Label_{i}")
+        for i, y in enumerate(y_values)]
+
+    print(pre.cluster_datatset(characters))
+    #image = Image.open("img.jpg").crop((0,0,1240, 690))
+    #boxes = pre.get_bounding_boxes(image)
+    #chars = pre.get_characters(image, boxes)
 
     #for char in chars:
     #    print(char)
-    x,y,w,h = boxes[1]
-    char = image.crop((x, y, w+x, y+h))
-    char = pre.transforms(char)
-    char = v2.functional.to_pil_image(char)
-    char.show("`1")
+    #x,y,w,h = boxes[1]
+    #char = image.crop((x, y, w+x, y+h))
+    #char = pre.transforms(char)
+    #char = v2.functional.to_pil_image(char)
+    #char.show("`1")
     #print(x,y,w,h)scs
     #image = image.convert("L")
     #image = image.crop((x, y, w+x, y+h))

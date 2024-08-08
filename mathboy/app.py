@@ -11,11 +11,16 @@ class Applicaion(tk.Tk):
         img = self.__get_picture()
         #boxes = self.preprocessor.get_bounding_boxes(img)
         chars = self.preprocessor.get_characters(img, self.preprocessor.get_bounding_boxes(img))
-
-        for c in chars:
-            self.canvas.create_rectangle(((c.x, c.y), (c.x + c.w, c.y+ c.h)))
-            self.canvas.create_text(c.x, c.y+10, text=c.label,  font=('Helvetica 24 bold'))
-            print(c)
+        colors = ["red", "green","blue", "yellow", "black", "pink", "purple"]
+        clusters = self.preprocessor.cluster_datatset(chars)
+        #print(clusters)
+        for i, cluster in enumerate(clusters):
+            #color = colors[i]
+            print(f"cluster {i}")
+            for c in cluster:
+                self.canvas.create_rectangle(((c.x, c.y), (c.x + c.w, c.y+ c.h)))
+                self.canvas.create_text(c.x, c.y+10, text=c.label,  font=('Helvetica 24 bold'), fill=colors[i])
+                print("   ", c)
 
     def __paint(self, event) -> None:
         """creates oval in place where mouse is."""
