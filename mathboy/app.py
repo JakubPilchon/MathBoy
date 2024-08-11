@@ -29,8 +29,8 @@ class Applicaion(tk.Tk):
         #print("Solved =  ", self.preprocessor.solve(clusters))
         answers = self.preprocessor.solve(clusters)
         if answers:
-            for (solved, y, x) in answers:
-                self.canvas.create_text(x,y, text="="+str(solved),  font=('Segoe Script', 80))
+            for (solved, y, x, h) in answers:
+                self.canvas.create_text(x,y, text="="+str(solved),  font=('Segoe Script', h))
 
     def __paint(self, event) -> None:
         """creates oval in place where mouse is."""
@@ -117,5 +117,5 @@ class Applicaion(tk.Tk):
         
 
 if __name__ == "__main__":
-    app = Applicaion()
+    app = Applicaion(verbose=True)
     app.mainloop()

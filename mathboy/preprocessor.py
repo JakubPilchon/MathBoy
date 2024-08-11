@@ -61,6 +61,7 @@ class Preprocessor:
         return img
     
     def get_bounding_boxes(self, image: Pillow_image) -> Bounding_boxes:
+        """detect characters in image and construct bounding boxes around characters. Return as (x,y,w,h)"""
         if isinstance(image, Image.Image):
             image = np.array(image)
         # Convert image to Grayscale
@@ -88,6 +89,7 @@ class Preprocessor:
         return rectangles   
 
     def get_characters(self, image: Pillow_image, bounding_boxes:Bounding_boxes) -> List[Character]:
+        """Classify characters and return them as list of Character objects."""
 
         character_list = []
         for (x, y, w, h) in bounding_boxes:
@@ -101,6 +103,7 @@ class Preprocessor:
         return character_list
     
     def cluster_datatset(self, characters: List[Character]) -> List[List[Character]]:
+        """Organize characters into mathematical expressions"""
         clusters = []
 
         mean_h = sum([char.h for char in characters]) / len(characters)
@@ -121,24 +124,18 @@ class Preprocessor:
 
         return clusters
     
-    def solve(self, expressions: List[List[Character]]) -> int | float:
-        #x, y, w, z = None, None, None, None
+    def solve(self, expressions: List[List[Character]]) -> List[Tuple[int, int, int, int]]:
+        """Read and solve mathematical expressions, return values and info"""
         answers = []
         variables = {"x": '', "y": '', "z": '', "w":''}
 
-        #check for character assigments
-        for exp in expressions:
-            exp_text = ""
-            for char in exp: exp_text += char.label
-            #exp_text = str([char.label for char in exp])
-            #if "=" not in exp_text: pass
+        #Read variables assignments
+        for exp in expressions:     
+            exp_text = ''.join(char.label for char in exp)
             if self.__check_num_of_letter_instances(exp_text, "=") == 1:
                 exp_text = exp_text.split("=")
-
-                #if exp_text in ("x", "y", "z", )
                 try:
-                    #print(exp_text[1])
-                    variables[exp_text[0]] = str(eval(exp_text[1]))
+                    variables[exp_text[0]] = str(eval(exp_text[1])) # assign variable
                 except ZeroDivisionError:
                     print("Division by zero detected!")
                 except IndexError:
@@ -148,15 +145,21 @@ class Preprocessor:
 
         # check for expressions to calculate
         for exp in expressions:
-            #exp_text = str([char.label for char in exp])
-            exp_text = ""
-            for char in exp: exp_text += char.label
+
+            exp_text = ''.join(char.label for char in exp)
+
             if self.__check_num_of_letter_instances(exp_text, "=") == 0:   
                 for var in variables:
                     exp_text = exp_text.replace(var, variables[var])
+
                 try:
                     evaluated = eval(exp_text)
-                    answers.append((evaluated, int(sum([char.y for char in exp])/len(exp) + exp[-1].h/2), int(min(exp[-1].x + 3 * exp[-1].w, 1200)))) # return text, mean_y, max_x
+                    if isinstance(evaluated, float):
+                        evaluated = round(evaluated, 3)
+                    answers.append((evaluated, # evaluated answer
+                                    int(sum([char.y for char in exp])/len(exp) + exp[-1].h/2), # y position of answer
+                                    exp[-1].x + 1.5 * exp[-1].w + 100, # x position of answer
+                                    self.__px_to_pt(px = exp[-1].h))) # height of answer in points
                 except ZeroDivisionError:
                     print("Division by zero detected!")
                 except IndexError:
@@ -167,10 +170,15 @@ class Preprocessor:
         return answers      
 
     def __check_num_of_letter_instances(self, string:str, char:str) -> int:
+        """Calculate number if instances of letter in string sequence"""
         i = 0
         for let in string:
             if let == char: i+=1
         return i
+    
+    def __px_to_pt(self, px:int | float) -> int:
+        """Convert height in pixels to points"""
+        return int(px * 72/96)
 
     def open_img(self):
         # check if file exists 

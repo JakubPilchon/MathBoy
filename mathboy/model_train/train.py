@@ -140,7 +140,7 @@ class CharModel(torch.nn.Module):
     def accuracy(self,
                  predicts: torch.tensor,
                  labels: torch.tensor
-                 ) -> torch.float:
+                 ) -> torch.FloatType:
         """Get accuracy of model"""
         predicts = torch.argmax(predicts, dim=1)
         labels = torch.argmax(labels, dim=1)
