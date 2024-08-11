@@ -30,7 +30,7 @@ class Applicaion(tk.Tk):
         answers = self.preprocessor.solve(clusters)
         if answers:
             for (solved, y, x, h) in answers:
-                self.canvas.create_text(x,y, text="="+str(solved),  font=('Segoe Script', h))
+                self.canvas.create_text(x,y, text=str(solved),  font=('Segoe Script', h))
 
     def __paint(self, event) -> None:
         """creates oval in place where mouse is."""
@@ -62,7 +62,6 @@ class Applicaion(tk.Tk):
         y2 = y1 + self.canvas.winfo_height()
         
         img = ImageGrab.grab((x1,y1,x2,y2), all_screens=True)
-        #img = img[:689, :1249]
         img = img.crop((0,0,1249, 689))
         return img
 

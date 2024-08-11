@@ -126,13 +126,14 @@ class Preprocessor:
     
     def solve(self, expressions: List[List[Character]]) -> List[Tuple[int, int, int, int]]:
         """Read and solve mathematical expressions, return values and info"""
-        answers = []
+        answers: List[Tuple[int, int, int, int]] = []
         variables = {"x": '', "y": '', "z": '', "w":''}
 
+        non_var: List[List[Character]] = []
         #Read variables assignments
         for exp in expressions:     
             exp_text = ''.join(char.label for char in exp)
-            if self.__check_num_of_letter_instances(exp_text, "=") == 1:
+            if self.__check_num_of_letter_instances(exp_text, "=") == 1 and exp_text.split("=")[0] in ["x", "y", "z", "w"]:
                 exp_text = exp_text.split("=")
                 try:
                     variables[exp_text[0]] = str(eval(exp_text[1])) # assign variable
@@ -142,30 +143,49 @@ class Preprocessor:
                     print("Bad assigment")
                 except SyntaxError:
                     print(f"Syntax error: {exp_text}")
+            else:
+                non_var.append(exp)
 
         # check for expressions to calculate
-        for exp in expressions:
+        for exp in non_var:
 
             exp_text = ''.join(char.label for char in exp)
 
-            if self.__check_num_of_letter_instances(exp_text, "=") == 0:   
-                for var in variables:
+            for var in variables:
                     exp_text = exp_text.replace(var, variables[var])
 
+            if self.__check_num_of_letter_instances(exp_text, "=") == 0:   
                 try:
                     evaluated = eval(exp_text)
                     if isinstance(evaluated, float):
                         evaluated = round(evaluated, 3)
-                    answers.append((evaluated, # evaluated answer
-                                    int(sum([char.y for char in exp])/len(exp) + exp[-1].h/2), # y position of answer
-                                    exp[-1].x + 1.5 * exp[-1].w + 100, # x position of answer
-                                    self.__px_to_pt(px = exp[-1].h))) # height of answer in points
+                    evaluated = "=" + str(evaluated)
+                    print("hi", evaluated)
                 except ZeroDivisionError:
                     print("Division by zero detected!")
                 except IndexError:
                     print("Bad assigment")  
                 except SyntaxError:
                     print(f"Syntax error: {exp_text}")
+
+            elif self.__check_num_of_letter_instances(exp_text, "=") == 1:
+                try:
+                    exp_text = exp_text.replace("=", "==")
+                    evaluated = eval(exp_text)
+                    evaluated = ":" + str(evaluated)
+                    print(evaluated)
+                except ZeroDivisionError:
+                    print("Division by zero detected!")
+                except IndexError:
+                    print("Bad assigment")  
+                except SyntaxError:
+                    print(f"Syntax error: {exp_text}")    
+            
+            answers.append((evaluated, # evaluated answer
+                            int(sum([char.y for char in exp])/len(exp) + exp[-1].h/2), # y position of answer
+                            exp[-1].x + 1.5 * exp[-1].w + 100, # x position of answer
+                            self.__px_to_pt(px = exp[-1].h))) # height of answer in points
+                
 
         return answers      
 
