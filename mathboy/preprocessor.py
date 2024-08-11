@@ -48,8 +48,8 @@ class Preprocessor:
         self.classes_lookup: Dict[int, str] = {
             0: "0", 1: "1", 2: "2", 3: "3", 4: "4",
             5: "5", 6: "6", 7: "7", 8: "8", 9: "9",
-            10: "mul", 11: "eq", 12: "minus", 13: "plus",
-            14: "slash", 15: "w", 16: "x", 17: "y", 18: "z"}
+            10: "*", 11: "=", 12: "-", 13: "+",
+            14: "/", 15: "w", 16: "x", 17: "y", 18: "z"}
 
     def get_picture(self):
         try:
@@ -109,21 +109,69 @@ class Preprocessor:
         while characters:
             stack = []
             char = characters.pop(0)
-            print(char)
             stack.append(char)
-            print(stack)
             for c in stack:
-                try:
-                    if (characters[0].y <= (c.y + mean_h)) and (characters[0].y >= (c.y - mean_h)):
+                if characters:
+                    if (characters[0].y <= (c.y + mean_h)):
                         stack.append(characters.pop(0)) 
-                except IndexError:
-                    pass
+                else:
+                    break
+            stack.sort(key=lambda char: char.x, reverse=False)
             clusters.append(stack)
-            
 
         return clusters
+    
+    def solve(self, expressions: List[List[Character]]) -> int | float:
+        #x, y, w, z = None, None, None, None
+        answers = []
+        variables = {"x": '', "y": '', "z": '', "w":''}
 
-        
+        #check for character assigments
+        for exp in expressions:
+            exp_text = ""
+            for char in exp: exp_text += char.label
+            #exp_text = str([char.label for char in exp])
+            #if "=" not in exp_text: pass
+            if self.__check_num_of_letter_instances(exp_text, "=") == 1:
+                exp_text = exp_text.split("=")
+
+                #if exp_text in ("x", "y", "z", )
+                try:
+                    #print(exp_text[1])
+                    variables[exp_text[0]] = str(eval(exp_text[1]))
+                except ZeroDivisionError:
+                    print("Division by zero detected!")
+                except IndexError:
+                    print("Bad assigment")
+                except SyntaxError:
+                    print(f"Syntax error: {exp_text}")
+
+        # check for expressions to calculate
+        for exp in expressions:
+            #exp_text = str([char.label for char in exp])
+            exp_text = ""
+            for char in exp: exp_text += char.label
+            if self.__check_num_of_letter_instances(exp_text, "=") == 0:   
+                for var in variables:
+                    exp_text = exp_text.replace(var, variables[var])
+                try:
+                    evaluated = eval(exp_text)
+                    answers.append((evaluated, int(sum([char.y for char in exp])/len(exp) + exp[-1].h/2), int(min(exp[-1].x + 3 * exp[-1].w, 1200)))) # return text, mean_y, max_x
+                except ZeroDivisionError:
+                    print("Division by zero detected!")
+                except IndexError:
+                    print("Bad assigment")  
+                except SyntaxError:
+                    print(f"Syntax error: {exp_text}")
+
+        return answers      
+
+    def __check_num_of_letter_instances(self, string:str, char:str) -> int:
+        i = 0
+        for let in string:
+            if let == char: i+=1
+        return i
+
     def open_img(self):
         # check if file exists 
         assert os.path.isfile('img.jpg')

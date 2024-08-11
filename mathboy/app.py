@@ -8,19 +8,29 @@ from preprocessor import Preprocessor
 class Applicaion(tk.Tk):
 
     def __button_click(self) -> None:
+
         img = self.__get_picture()
-        #boxes = self.preprocessor.get_bounding_boxes(img)
         chars = self.preprocessor.get_characters(img, self.preprocessor.get_bounding_boxes(img))
-        colors = ["red", "green","blue", "yellow", "black", "pink", "purple"]
         clusters = self.preprocessor.cluster_datatset(chars)
-        #print(clusters)
-        for i, cluster in enumerate(clusters):
-            #color = colors[i]
-            print(f"cluster {i}")
-            for c in cluster:
-                self.canvas.create_rectangle(((c.x, c.y), (c.x + c.w, c.y+ c.h)))
-                self.canvas.create_text(c.x, c.y+10, text=c.label,  font=('Helvetica 24 bold'), fill=colors[i])
-                print("   ", c)
+
+        if self.verbose:
+            colors = ["red", "green","blue", "yellow", "black", "pink", "purple"]
+            for i, cluster in enumerate(clusters):
+                text = ""
+                #color = colors[i]
+                print(f"cluster {i}")
+                for c in cluster:
+                    self.canvas.create_rectangle(((c.x, c.y), (c.x + c.w, c.y+ c.h)))
+                    self.canvas.create_text(c.x, c.y+10, text=c.label,  font=('Helvetica 24 bold'), fill=colors[i])
+                    text += c.label
+                    print("   ", c)
+                print("Expression: ", {text})
+
+        #print("Solved =  ", self.preprocessor.solve(clusters))
+        answers = self.preprocessor.solve(clusters)
+        if answers:
+            for (solved, y, x) in answers:
+                self.canvas.create_text(x,y, text="="+str(solved),  font=('Segoe Script', 80))
 
     def __paint(self, event) -> None:
         """creates oval in place where mouse is."""
@@ -56,7 +66,7 @@ class Applicaion(tk.Tk):
         img = img.crop((0,0,1249, 689))
         return img
 
-    def __init__(self):
+    def __init__(self, verbose:bool = False):
         super().__init__()
 
         self.preprocessor = Preprocessor()
@@ -69,6 +79,7 @@ class Applicaion(tk.Tk):
         # Variables
         self.color = tk.StringVar(self, "black")
         self.scale = tk.IntVar(self, 5)
+        self.verbose = verbose
 
         # Define app layout
         colorframe = ttk.Frame(self, height=55, width=300, borderwidth=3)
