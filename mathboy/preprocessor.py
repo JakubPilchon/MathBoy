@@ -183,7 +183,7 @@ class Preprocessor:
             
             answers.append((evaluated, # evaluated answer
                             int(sum([char.y for char in exp])/len(exp) + exp[-1].h/2), # y position of answer
-                            exp[-1].x + 1.5 * exp[-1].w + 100, # x position of answer
+                            exp[-1].x + int(len(evaluated)/2 * exp[-1].w) + 100, # x position of answer
                             self.__px_to_pt(px = exp[-1].h))) # height of answer in points
                 
 
