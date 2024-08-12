@@ -200,67 +200,13 @@ class Preprocessor:
         """Convert height in pixels to points"""
         return int(px * 72/96)
 
-    def open_img(self):
-        # check if file exists 
-        assert os.path.isfile('img.jpg')
-        # Load up image 
-        img = cv.imread('img.jpg')
-
-        # Convert image to Grayscale
-        img_pre = cv.cvtColor(img, cv.COLOR_BGR2GRAY)
-        # Thresholding technique on image, makes every character black
-        _, img_pre = cv.threshold(img_pre, 250, 255, cv.THRESH_OTSU)
-        # Crops image, because loaded up image is 4 pixels higher and wider than it should be
-        img_pre = img_pre[:690, :1250]
-        # Reverse colors, now characters are white and background is black
-        img_pre = cv.bitwise_not(img_pre)
-
-        # makes characters bigger, better for finding countours
-        dilated = cv.dilate(img_pre, cv.getStructuringElement(cv.MORPH_RECT,self.KERNEL), iterations=5)
-
-        #finds contours of characters
-        contours, _ = cv.findContours(dilated, cv.RETR_TREE, cv.CHAIN_APPROX_SIMPLE)
-
-        
-        for n in contours:
-            # finds rectange encompassing character countour
-            x,y,w,h = cv.boundingRect(n)
-            #if h < 50: h = 50
-
-            if w >= 30:
-                # paints green rectangle around character
-                cv.rectangle(img, (x,y), (x+w, y+h), color= (0,255,00), thickness= 5)
-
-        cv.imshow("img_pre",dilated)
-        cv.imshow("img", img)
-        k = cv.waitKey(0)
-
 if __name__ == "__main__":
     pre = Preprocessor()
 
     y_values = [386, 347, 336, 311, 87, 59, 58, 45, 40, 35, 33]
 
-    # Tworzenie listy obiektów Character
     characters = [
         Character(x=i, y=y, w=10 + i, h=20 + i, label=f"Label_{i}")
         for i, y in enumerate(y_values)]
 
     print(pre.cluster_datatset(characters))
-    #image = Image.open("img.jpg").crop((0,0,1240, 690))
-    #boxes = pre.get_bounding_boxes(image)
-    #chars = pre.get_characters(image, boxes)
-
-    #for char in chars:
-    #    print(char)
-    #x,y,w,h = boxes[1]
-    #char = image.crop((x, y, w+x, y+h))
-    #char = pre.transforms(char)
-    #char = v2.functional.to_pil_image(char)
-    #char.show("`1")
-    #print(x,y,w,h)scs
-    #image = image.convert("L")
-    #image = image.crop((x, y, w+x, y+h))
-    #image = image.point(lambda p: 0 if p >= 240  else 255)
-    #image = ImageChops.invert(image)
-    #image.show("character")
-    #pre.open_img()
