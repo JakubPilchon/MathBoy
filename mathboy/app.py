@@ -5,7 +5,7 @@ from PIL import Image
 from preprocessor import Preprocessor
 
 
-class Applicaion(tk.Tk):
+class Application(tk.Tk):
 
     def __button_click(self) -> None:
 
@@ -116,5 +116,5 @@ class Applicaion(tk.Tk):
         
 
 if __name__ == "__main__":
-    app = Applicaion(verbose=True)
+    app = Application(verbose=True)
     app.mainloop()

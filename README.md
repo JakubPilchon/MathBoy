@@ -10,9 +10,9 @@ It supports 3 types of mathematical expressions:
 
 Example usage:
 ![example_image](showcase.PNG)
----
-## Datasets
+
+Datasets
 ---
 I used two datasets as the first one didn't have equal sign which was essential for this project.
-https://github.com/wblachowski/bhmsds -> for majority of characters
+https://github.com/wblachowski/bhmsds -> for majority of characters\
 https://www.kaggle.com/datasets/sagyamthapa/handwritten-math-symbols -> for equal sign "="
