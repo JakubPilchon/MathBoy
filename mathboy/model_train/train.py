@@ -260,7 +260,7 @@ if __name__ == "__main__":
 
     ## print confusion matrix in readable way
     print("CONFUSION MATRIX")
-    print(u"\033[4m  T\P \u2551" + u"\u2551".join(list(f"{z.center(5, " ")}" for z in con)) + u"\u2551 \033[0m")
+    print(u"\033[4m  T\P \u2551" + u"\u2551".join(list(f"{z.center(5, ' ')}" for z in con)) + u"\u2551 \033[0m")
     for n in con:
         tab = u"\u2551"
         for m in con[n].values():

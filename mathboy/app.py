@@ -3,6 +3,8 @@ from tkinter import ttk
 from PIL import ImageGrab
 from PIL import Image
 from preprocessor import Preprocessor
+import pyscreenshot
+import platform
 
 
 class Application(tk.Tk):
@@ -61,7 +63,12 @@ class Application(tk.Tk):
         x2 = x1 + self.canvas.winfo_width()
         y2 = y1 + self.canvas.winfo_height()
         
-        img = ImageGrab.grab((x1,y1,x2,y2), all_screens=True)
+        if platform.system() == "Linux": # handle diffrent systems
+            img = pyscreenshot.grab((x1,y1,x2,y2))
+            img = img.convert("RGB")
+        else:
+            img = ImageGrab.grab((x1,y1,x2,y2), all_screens=True)
+
         img = img.crop((0,0,1249, 689))
         return img
 
