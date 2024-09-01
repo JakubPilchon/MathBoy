@@ -19,7 +19,6 @@ class Application(tk.Tk):
             colors = ["red", "green","blue", "yellow", "black", "pink", "purple"]
             for i, cluster in enumerate(clusters):
                 text = ""
-                #color = colors[i]
                 print(f"cluster {i}")
                 for c in cluster:
                     self.canvas.create_rectangle(((c.x, c.y), (c.x + c.w, c.y+ c.h)))
@@ -32,10 +31,12 @@ class Application(tk.Tk):
         if answers:
             for (solved, y, x, h, w) in answers:
                 if solved != "ERROR":
-                    self.canvas.create_text(x,y, text=str(solved),  font=('Segoe Script', h))
+                    self.canvas.create_text(x+30,y, text=str(solved),  font=(self.font, h))
                 else:
                     self.canvas.create_rectangle(((x,y+2*h), (x+w, y)), outline="red", tags="error_mes")
                     self.canvas.create_text(x,y-int(h/2) + 20, text="error", fill="red", tags="error_mes")
+
+                    self.error_button["state"] = "normal"
 
     def __paint(self, event) -> None:
         """creates oval in place where mouse is."""
@@ -74,6 +75,10 @@ class Application(tk.Tk):
 
         img = img.crop((0,0,1249, 670))
         return img
+    
+    def __delete_errors(self) -> None:
+        self.canvas.delete("error_mes")
+        self.error_button["state"] = "disabled"
 
     def __init__(self, verbose:bool = False):
         super().__init__()
@@ -88,6 +93,7 @@ class Application(tk.Tk):
         # Variables
         self.color = tk.StringVar(self, "black")
         self.scale = tk.IntVar(self, 5)
+        self.font = "Segoe Script" if platform.system() != "Linux" else "Z003"
         self.verbose = verbose
 
         # Define app layout
@@ -109,11 +115,14 @@ class Application(tk.Tk):
         button = ttk.Button(colorframe, text="Solve", command=self.__button_click)
         button.grid(column=4, row=1, sticky='NW')
 
-        reset_button = ttk.Button(colorframe, text="reset", command= self.__reset)
+        reset_button = ttk.Button(colorframe, text="Reset", command= self.__reset)
         reset_button.grid(column=4, row=0, sticky='NW')
 
+        self.error_button = ttk.Button(colorframe, text="Delete Errors", state="disabled", command= self.__delete_errors)
+        self.error_button.grid(column=5, row=0)
+
         scale = tk.Scale(colorframe,  variable=self.scale, from_=2, to=15, orient=tk.HORIZONTAL)
-        scale.grid(column=5, row=0, rowspan=2)
+        scale.grid(column=6, row=0, rowspan=2, columnspan=2)
 
         self.canvas = tk.Canvas(self, width=1250, height=700, background="#ffffff", cursor="plus")
         self.canvas.grid(column=0, row=2)
