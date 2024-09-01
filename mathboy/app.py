@@ -28,11 +28,14 @@ class Application(tk.Tk):
                     print("   ", c)
                 print("Expression: ", {text})
 
-        #print("Solved =  ", self.preprocessor.solve(clusters))
         answers = self.preprocessor.solve(clusters)
         if answers:
-            for (solved, y, x, h) in answers:
-                self.canvas.create_text(x,y, text=str(solved),  font=('Segoe Script', h))
+            for (solved, y, x, h, w) in answers:
+                if solved != "ERROR":
+                    self.canvas.create_text(x,y, text=str(solved),  font=('Segoe Script', h))
+                else:
+                    self.canvas.create_rectangle(((x,y+2*h), (x+w, y)), outline="red", tags="error_mes")
+                    self.canvas.create_text(x,y-int(h/2) + 20, text="error", fill="red", tags="error_mes")
 
     def __paint(self, event) -> None:
         """creates oval in place where mouse is."""
@@ -69,7 +72,7 @@ class Application(tk.Tk):
         else:
             img = ImageGrab.grab((x1,y1,x2,y2), all_screens=True)
 
-        img = img.crop((0,0,1249, 689))
+        img = img.crop((0,0,1249, 670))
         return img
 
     def __init__(self, verbose:bool = False):
@@ -103,7 +106,7 @@ class Application(tk.Tk):
         tk.Radiobutton(colorframe, variable = self.color, value="purple", selectcolor="#8503ff", cursor="hand2").grid(column=3, row=0, sticky="NW")
         tk.Radiobutton(colorframe, variable = self.color, value="#de09cc",   selectcolor="#ff03f2", cursor="hand2").grid(column=3, row=1, sticky="NW")
 
-        button = ttk.Button(colorframe, text="Click button", command=self.__button_click)
+        button = ttk.Button(colorframe, text="Solve", command=self.__button_click)
         button.grid(column=4, row=1, sticky='NW')
 
         reset_button = ttk.Button(colorframe, text="reset", command= self.__reset)

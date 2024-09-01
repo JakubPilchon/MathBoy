@@ -37,6 +37,13 @@ class Preprocessor:
         self.model = CharModel()
         self.model.load_state_dict(torch.load("model.pt"))
 
+        if torch.cuda.is_available():
+            self.device = "cuda"
+        else:
+            self.device = "cpu"
+
+        self.model.to(self.device)
+
         self.transforms = v2.Compose([
             v2.ToImage(),
             v2.ToDtype(torch.float32, scale=True),
@@ -94,7 +101,7 @@ class Preprocessor:
         character_list = []
         for (x, y, w, h) in bounding_boxes:
             character = image.crop((x, y, x+w, y+h))
-            character = self.transforms(character)
+            character = self.transforms(character).to(self.device)
             char_class = self.model.forward(character)
             char_class = self.classes_lookup[int(torch.argmax(char_class))]
 
@@ -126,23 +133,27 @@ class Preprocessor:
     
     def solve(self, expressions: List[List[Character]]) -> List[Tuple[int, int, int, int]]:
         """Read and solve mathematical expressions, return values and info"""
-        answers: List[Tuple[int, int, int, int]] = []
+        answers: List[Tuple[str, int, int, int]] = []
         variables = {"x": '', "y": '', "z": '', "w":''}
 
         non_var: List[List[Character]] = []
         #Read variables assignments
-        for exp in expressions:     
+        for exp in expressions:
+            no_error = True     
             exp_text = ''.join(char.label for char in exp)
             if self.__check_num_of_letter_instances(exp_text, "=") == 1 and exp_text.split("=")[0] in ["x", "y", "z", "w"]:
                 exp_text = exp_text.split("=")
                 try:
                     variables[exp_text[0]] = str(eval(exp_text[1])) # assign variable
-                except ZeroDivisionError:
-                    print("Division by zero detected!")
-                except IndexError:
-                    print("Bad assigment")
-                except SyntaxError:
-                    print(f"Syntax error: {exp_text}")
+                except Exception:
+                    no_error = False
+                    answers.append((
+                        "ERROR", # text
+                        min(*(char.y for char in exp)), # y
+                        exp[0].x, #x
+                        int(max(*(char.h for char in exp))/2), # h
+                        exp[-1].x - exp[0].x + exp[-1].w # w
+                    ))
             else:
                 non_var.append(exp)
 
@@ -161,12 +172,15 @@ class Preprocessor:
                         evaluated = round(evaluated, 3)
                     evaluated = "=" + str(evaluated)
                     print("hi", evaluated)
-                except ZeroDivisionError:
-                    print("Division by zero detected!")
-                except IndexError:
-                    print("Bad assigment")  
-                except SyntaxError:
-                    print(f"Syntax error: {exp_text}")
+                except Exception:
+                    no_error = False
+                    answers.append((
+                        "ERROR", # text
+                        min(*(char.y for char in exp)), # y
+                        exp[0].x, #x
+                        int(max(*(char.h for char in exp))/2), # h
+                        exp[-1].x - exp[0].x + exp[-1].w # w
+                    ))
 
             elif self.__check_num_of_letter_instances(exp_text, "=") == 1:
                 try:
@@ -174,17 +188,22 @@ class Preprocessor:
                     evaluated = eval(exp_text)
                     evaluated = ":" + str(evaluated)
                     print(evaluated)
-                except ZeroDivisionError:
-                    print("Division by zero detected!")
-                except IndexError:
-                    print("Bad assigment")  
-                except SyntaxError:
-                    print(f"Syntax error: {exp_text}")    
-            
-            answers.append((evaluated, # evaluated answer
-                            int(sum([char.y for char in exp])/len(exp) + exp[-1].h/2), # y position of answer
-                            exp[-1].x + int(len(evaluated)/2 * exp[-1].w) + 100, # x position of answer
-                            self.__px_to_pt(px = exp[-1].h))) # height of answer in points
+                except Exception:
+                    no_error = False
+                    answers.append((
+                        "ERROR", # text
+                        min(*(char.y for char in exp)), # y
+                        exp[0].x, #x
+                        int(max(*(char.h for char in exp))), # h
+                        exp[-1].x - exp[0].x + exp[-1].w # w
+                    ))
+                      
+            if no_error:
+                answers.append((evaluated, # evaluated answer
+                                int(sum([char.y for char in exp])/len(exp) + exp[-1].h/2), # y position of answer
+                                exp[-1].x + int(len(evaluated)/2 * exp[-1].w) + 100, # x position of answer
+                                self.__px_to_pt(px = exp[-1].h),# height of answer in points
+                                0)) # width (not neccessary in this case)
                 
 
         return answers      
