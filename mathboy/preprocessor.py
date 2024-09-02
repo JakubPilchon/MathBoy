@@ -35,7 +35,8 @@ class Preprocessor:
         self.KERNEL = (3,9)
 
         self.model = CharModel()
-        self.model.load_state_dict(torch.load("model.pt"))
+        self.model.load_state_dict(torch.load("mathboy/model.pt"))
+        self.model.eval()
 
         if torch.cuda.is_available():
             self.device = "cuda"
@@ -147,13 +148,7 @@ class Preprocessor:
                     variables[exp_text[0]] = str(eval(exp_text[1])) # assign variable
                 except Exception:
                     no_error = False
-                    answers.append((
-                        "ERROR", # text
-                        min(*(char.y for char in exp)), # y
-                        exp[0].x, #x
-                        int(max(*(char.h for char in exp))/2), # h
-                        exp[-1].x - exp[0].x + exp[-1].w # w
-                    ))
+                    answers.append(self.__return_error(exp))
             else:
                 non_var.append(exp)
 
@@ -162,7 +157,7 @@ class Preprocessor:
 
             exp_text = ''.join(char.label for char in exp)
 
-            for var in variables:
+            for var in variables: # replace letters with variable values
                     exp_text = exp_text.replace(var, variables[var])
 
             if self.__check_num_of_letter_instances(exp_text, "=") == 0:   
@@ -174,13 +169,7 @@ class Preprocessor:
                     print("hi", evaluated)
                 except Exception:
                     no_error = False
-                    answers.append((
-                        "ERROR", # text
-                        min(*(char.y for char in exp)), # y
-                        exp[0].x, #x
-                        int(max(*(char.h for char in exp))/2), # h
-                        exp[-1].x - exp[0].x + exp[-1].w # w
-                    ))
+                    answers.append(self.__return_error(exp))
 
             elif self.__check_num_of_letter_instances(exp_text, "=") == 1:
                 try:
@@ -190,23 +179,27 @@ class Preprocessor:
                     print(evaluated)
                 except Exception:
                     no_error = False
-                    answers.append((
-                        "ERROR", # text
-                        min(*(char.y for char in exp)), # y
-                        exp[0].x, #x
-                        int(max(*(char.h for char in exp))), # h
-                        exp[-1].x - exp[0].x + exp[-1].w # w
-                    ))
+                    answers.append(self.__return_error(exp))
                       
             if no_error:
                 answers.append((evaluated, # evaluated answer
                                 int(sum([char.y for char in exp])/len(exp) + exp[-1].h/2), # y position of answer
                                 exp[-1].x + int(len(evaluated)/2 * exp[-1].w) + 100, # x position of answer
                                 self.__px_to_pt(px = exp[-1].h),# height of answer in points
-                                0)) # width (not neccessary in this case)
-                
+                                0)) # width (not neccessary in this case)       
 
         return answers      
+
+    ## Interal functions:
+    #  
+    def __return_error(self, expression: List[Character]) -> Tuple[str, int, int, int, int]:
+        """Transforms expressoin into response format.
+        Response format: {response_text, y,x,h,w}"""
+        x = expression[0].x # x position of first character in expression
+        y = min(*(char.y for char in expression)) # y is average y of given expresson
+        h = int(max(*(char.h for char in expression))) # height is maximum height of an character in expression
+        w = expression[-1].x - expression[0].x + expression[-1].w
+        return ("ERROR", y,x,h,w)
 
     def __check_num_of_letter_instances(self, string:str, char:str) -> int:
         """Calculate number if instances of letter in string sequence"""

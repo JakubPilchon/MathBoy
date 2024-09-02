@@ -33,8 +33,8 @@ class Application(tk.Tk):
                 if solved != "ERROR":
                     self.canvas.create_text(x+30,y, text=str(solved),  font=(self.font, h))
                 else:
-                    self.canvas.create_rectangle(((x,y+2*h), (x+w, y)), outline="red", tags="error_mes")
-                    self.canvas.create_text(x,y-int(h/2) + 20, text="error", fill="red", tags="error_mes")
+                    self.canvas.create_rectangle(((x,y+h), (x+w, y)), outline="red", tags="error_mes")
+                    self.canvas.create_text(x,y - 20, text="error", fill="red", tags="error_mes")
 
                     self.error_button["state"] = "normal"
 
